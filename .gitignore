@@ -39,6 +39,7 @@ __blobstorage__/
 # Getting started example
 ragtest/
 .ragtest/
+graphrag_moodys_v1.2.0/
 .pipelines
 .pipeline
 
@@ -56,3 +57,6 @@ docsite/
 
 # Jupyter notebook
 .ipynb_checkpoints/
+
+
+

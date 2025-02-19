@@ -6,18 +6,17 @@
 import asyncio
 import sys
 from pathlib import Path
-
-import pandas as pd
+from typing import TYPE_CHECKING, Any
 
 import graphrag.api as api
 from graphrag.config.load_config import load_config
 from graphrag.config.models.graph_rag_config import GraphRagConfig
-from graphrag.config.resolve_path import resolve_paths
-from graphrag.index.create_pipeline_config import create_pipeline_config
 from graphrag.logger.print_progress import PrintProgressLogger
 from graphrag.storage.factory import StorageFactory
 from graphrag.utils.storage import load_table_from_storage, storage_has_table
 
+if TYPE_CHECKING:
+    import pandas as pd
 logger = PrintProgressLogger("")
 
 
@@ -80,7 +79,7 @@ def run_global_search(
                     get_context_data = False
                 else:
                     full_response += stream_chunk
-                    print(stream_chunk, end="")  # noqa: T201
+                    log.info(stream_chunk)  # noqa: T201
                     sys.stdout.flush()  # flush output buffer to display text immediately
             print()  # noqa: T201
             return full_response, context_data

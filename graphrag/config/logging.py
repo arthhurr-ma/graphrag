@@ -5,6 +5,7 @@
 
 import logging
 from pathlib import Path
+import time
 
 from graphrag.config.enums import ReportingType
 from graphrag.config.models.graph_rag_config import GraphRagConfig
@@ -34,7 +35,7 @@ def enable_logging(log_filepath: str | Path, verbose: bool = False) -> None:
 
 
 def enable_logging_with_config(
-    config: GraphRagConfig, verbose: bool = False
+    config: GraphRagConfig, method:str, verbose: bool = False
 ) -> tuple[bool, str]:
     """Enable logging to a file based on the config.
 
@@ -55,7 +56,9 @@ def enable_logging_with_config(
         (True, str) if logging was enabled.
     """
     if config.reporting.type == ReportingType.file:
-        log_path = Path(config.reporting.base_dir) / "indexing-engine.log"
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        method_log_dir = Path(config.reporting.base_dir).joinpath("output", method)
+        log_path = method_log_dir.joinpath(f"{method}_{timestamp}.log")
         enable_logging(log_path, verbose)
         return (True, str(log_path))
     return (False, "")

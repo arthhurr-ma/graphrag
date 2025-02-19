@@ -13,9 +13,10 @@ from pathlib import Path
 import graphrag.api as api
 from graphrag.config.enums import CacheType
 from graphrag.config.load_config import load_config
-from graphrag.config.logging import enable_logging_with_config
+#from graphrag.logger.callback import Token_Callback
 from graphrag.config.resolve_path import resolve_paths
 from graphrag.index.validate_config import validate_config_names
+from graphrag.config.logging import enable_logging_with_config, enable_logging
 from graphrag.logger.base import ProgressLogger
 from graphrag.logger.factory import LoggerFactory, LoggerType
 from graphrag.utils.cli import redact
@@ -74,9 +75,13 @@ def index_cli(
     dry_run: bool,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,  
 ):
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
+    progress_logger = LoggerFactory().create_logger(logger)
+    logging_enabled, log_path = enable_logging_with_config(config, method="update", verbose=verbose)
 
     _run_index(
         config=config,
@@ -84,11 +89,15 @@ def index_cli(
         resume=resume,
         memprofile=memprofile,
         cache=cache,
-        logger=logger,
+        logger=progress_logger,
         dry_run=dry_run,
         skip_validation=skip_validation,
         output_dir=output_dir,
+        logging_enabled=logging_enabled,  
+        log_path=log_path, 
+        method="index",
     )
+
 
 
 def update_cli(
@@ -100,9 +109,15 @@ def update_cli(
     config_filepath: Path | None,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,  
 ):
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
+
+    progress_logger = LoggerFactory().create_logger(logger)
+    logging_enabled, log_path = enable_logging_with_config(config, method="update", verbose=verbose)
+
 
     # Check if update storage exist, if not configure it with default values
     if not config.update_index_storage:
@@ -120,10 +135,13 @@ def update_cli(
         resume=False,
         memprofile=memprofile,
         cache=cache,
-        logger=logger,
+        logger=progress_logger,
         dry_run=False,
         skip_validation=skip_validation,
         output_dir=output_dir,
+        logging_enabled=logging_enabled,  
+        log_path=log_path, 
+        method="update",
     )
 
 
@@ -137,9 +155,11 @@ def _run_index(
     dry_run,
     skip_validation,
     output_dir,
+    logging_enabled, 
+    log_path,
+    method,
 ):
-    progress_logger = LoggerFactory().create_logger(logger)
-    info, error, success = _logger(progress_logger)
+    info, error, success = _logger(logger)
     run_id = resume or time.strftime("%Y%m%d-%H%M%S")
 
     config.storage.base_dir = str(output_dir) if output_dir else config.storage.base_dir
@@ -151,7 +171,8 @@ def _run_index(
     if not cache:
         config.cache.type = CacheType.none
 
-    enabled_logging, log_path = enable_logging_with_config(config, verbose)
+    enabled_logging, log_path = enable_logging_with_config(config, method=method,  verbose=verbose)
+    log.info("After enable_logging_with_config") 
     if enabled_logging:
         info(f"Logging enabled at {log_path}", True)
     else:
@@ -161,7 +182,7 @@ def _run_index(
         )
 
     if skip_validation:
-        validate_config_names(progress_logger, config)
+        validate_config_names(logger, config)
 
     info(f"Starting pipeline run for: {run_id}, {dry_run=}", verbose)
     info(
@@ -173,7 +194,8 @@ def _run_index(
         info("Dry run complete, exiting...", True)
         sys.exit(0)
 
-    _register_signal_handlers(progress_logger)
+    #token_callback = Token_Callback()
+    _register_signal_handlers(logger)
 
     outputs = asyncio.run(
         api.build_index(
@@ -181,14 +203,15 @@ def _run_index(
             run_id=run_id,
             is_resume_run=bool(resume),
             memory_profile=memprofile,
-            progress_logger=progress_logger,
+            progress_logger=logger,
+            #token_callback=token_callback.extract_and_aggregate
         )
     )
     encountered_errors = any(
         output.errors and len(output.errors) > 0 for output in outputs
     )
 
-    progress_logger.stop()
+    logger.stop()
     if encountered_errors:
         error(
             "Errors occurred during the pipeline run, see logs for more details.", True
@@ -196,4 +219,6 @@ def _run_index(
     else:
         success("All workflows completed successfully.", True)
 
+
+    #token_callback.print_stats()
     sys.exit(1 if encountered_errors else 0)

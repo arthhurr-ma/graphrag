@@ -5,14 +5,17 @@
 
 import os
 import re
-from collections.abc import Callable
+import yaml
 from enum import Enum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Callable
+from datetime import datetime
 
 import typer
-
+from graphrag.config.logging import enable_logging_with_config, enable_logging
+from graphrag.config.load_config import load_config
 from graphrag.logger.types import LoggerType
+from graphrag.logger.factory import LoggerFactory
 from graphrag.prompt_tune.defaults import (
     MAX_TOKEN_COUNT,
     MIN_CHUNK_SIZE,
@@ -175,18 +178,42 @@ def _index_cli(
     """Build a knowledge graph index."""
     from graphrag.cli.index import index_cli
 
-    index_cli(
-        root_dir=root,
-        verbose=verbose,
-        resume=resume,
-        memprofile=memprofile,
-        cache=cache,
-        logger=LoggerType(logger),
-        config_filepath=config,
-        dry_run=dry_run,
-        skip_validation=skip_validation,
-        output_dir=output,
-    )
+    if config is None:
+        config = Path(root) / 'settings.yaml'
+    
+    if not config.exists():
+        raise FileNotFoundError(f"Config file not found at: {config}")
+
+    config_data = load_config(root, config_filepath=config)
+
+    actual_logger = LoggerFactory().create_logger(logger)
+    actual_logger.info(f"Successfully loaded config from {config}")
+    actual_logger.info(f"Executing index for project at {root}")
+
+    logging_enabled, log_path = enable_logging_with_config(config_data, method="index", verbose=verbose)
+
+    if logging_enabled:
+        actual_logger.info(f"Logging enabled for index. Logs will be written to: {log_path}")
+
+    try:
+        index_cli(
+            root_dir=root,
+            verbose=verbose,
+            resume=resume,
+            memprofile=memprofile,
+            cache=cache,
+            logger=logger,
+            config_filepath=config,
+            dry_run=dry_run,
+            skip_validation=skip_validation,
+            output_dir=output,
+            logging_enabled=logging_enabled, 
+            log_path=log_path, 
+        )
+        actual_logger.success("Index execution completed successfully.")
+        
+    except Exception as e:
+        actual_logger.error(f"An error occurred during index execution: {e}")
 
 
 @app.command("update")
@@ -240,16 +267,40 @@ def _update_cli(
     """
     from graphrag.cli.index import update_cli
 
-    update_cli(
-        root_dir=root,
-        verbose=verbose,
-        memprofile=memprofile,
-        cache=cache,
-        logger=LoggerType(logger),
-        config_filepath=config,
-        skip_validation=skip_validation,
-        output_dir=output,
-    )
+    if config is None:
+        config = Path(root) / 'settings.yaml'
+
+    if not config.exists():
+        raise FileNotFoundError(f"Config file not found at: {config}")
+
+    config_data = load_config(root, config_filepath=config)
+
+    actual_logger = LoggerFactory().create_logger(logger)
+    actual_logger.info(f"Successfully loaded config from {config}")
+    actual_logger.info(f"Executing update for project at {root}")
+
+    logging_enabled, log_path = enable_logging_with_config(config_data, method="update", verbose=verbose)
+
+    if logging_enabled:
+        actual_logger.info(f"Logging enabled for update. Logs will be written to: {log_path}")
+
+    try:
+        update_cli(
+            root_dir=root,
+            verbose=verbose,
+            memprofile=memprofile,
+            cache=cache,
+            logger=logger,
+            config_filepath=config,
+            skip_validation=skip_validation,
+            output_dir=output,
+            logging_enabled=logging_enabled,
+            log_path=log_path,
+        )
+        actual_logger.success("Update execution completed successfully.")
+        
+    except Exception as e:
+        actual_logger.error(f"An error occurred during update execution: {e}")
 
 
 @app.command("prompt-tune")
@@ -432,44 +483,55 @@ def _query_cli(
         run_local_search,
     )
 
-    match method:
-        case SearchType.LOCAL:
-            run_local_search(
-                config_filepath=config,
-                data_dir=data,
-                root_dir=root,
-                community_level=community_level,
-                response_type=response_type,
-                streaming=streaming,
-                query=query,
-            )
-        case SearchType.GLOBAL:
-            run_global_search(
-                config_filepath=config,
-                data_dir=data,
-                root_dir=root,
-                community_level=community_level,
-                dynamic_community_selection=dynamic_community_selection,
-                response_type=response_type,
-                streaming=streaming,
-                query=query,
-            )
-        case SearchType.DRIFT:
-            run_drift_search(
-                config_filepath=config,
-                data_dir=data,
-                root_dir=root,
-                community_level=community_level,
-                streaming=False,  # Drift search does not support streaming (yet)
-                query=query,
-            )
-        case SearchType.BASIC:
-            run_basic_search(
-                config_filepath=config,
-                data_dir=data,
-                root_dir=root,
-                streaming=streaming,
-                query=query,
-            )
-        case _:
-            raise ValueError(INVALID_METHOD_ERROR)
+    try:
+        match method:
+            case SearchType.LOCAL:
+                logger.info("Running local search...")
+                run_local_search(
+                    config_filepath=config,
+                    data_dir=data,
+                    root_dir=root,
+                    community_level=community_level,
+                    response_type=response_type,
+                    streaming=streaming,
+                    query=query,
+                )
+            case SearchType.GLOBAL:
+                logger.info("Running global search...")
+                run_global_search(
+                    config_filepath=config,
+                    data_dir=data,
+                    root_dir=root,
+                    community_level=community_level,
+                    dynamic_community_selection=dynamic_community_selection,
+                    response_type=response_type,
+                    streaming=streaming,
+                    query=query,
+                )
+            case SearchType.DRIFT:
+                logger.info("Running drift search...")
+                run_drift_search(
+                    config_filepath=config,
+                    data_dir=data,
+                    root_dir=root,
+                    community_level=community_level,
+                    streaming=False,  # Drift search does not support streaming (yet)
+                    query=query,
+                )
+            case SearchType.BASIC:
+                logger.info("Running basic search...")
+                run_basic_search(
+                    config_filepath=config,
+                    data_dir=data,
+                    root_dir=root,
+                    streaming=streaming,
+                    query=query,
+                )
+            case _:
+                logger.error(f"Invalid method: {method}")
+                raise ValueError(INVALID_METHOD_ERROR)
+        
+        logger.success("Query execution completed successfully.")
+        
+    except Exception as e:
+        logger.error(f"An error occurred during query execution: {e}")

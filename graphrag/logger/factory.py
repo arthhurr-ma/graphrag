@@ -4,6 +4,7 @@
 """Factory functions for creating loggers."""
 
 from typing import ClassVar
+import os
 
 from graphrag.logger.base import ProgressLogger
 from graphrag.logger.null_progress import NullProgressLogger
