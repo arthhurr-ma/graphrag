@@ -56,3 +56,11 @@ docsite/
 
 # Jupyter notebook
 .ipynb_checkpoints/
+
+
+
+# extra directories
+
+graphrag_moodys_v1.2.0/
+scalingtest/
+graphrag/graphrag/extra_storage/
