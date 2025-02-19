@@ -5,6 +5,9 @@
 
 import networkx as nx
 from fnllm import ChatLLM
+from collections.abc import Callable
+from typing import Dict
+import logging
 
 import graphrag.config.defaults as defs
 from graphrag.cache.pipeline_cache import PipelineCache
@@ -19,6 +22,8 @@ from graphrag.index.operations.extract_entities.typing import (
 )
 
 
+log = logging.getLogger(__name__)
+
 async def run_graph_intelligence(
     docs: list[Document],
     entity_types: EntityTypes,
@@ -27,6 +32,7 @@ async def run_graph_intelligence(
     args: StrategyConfig,
 ) -> EntityExtractionResult:
     """Run the graph intelligence entity extraction strategy."""
+
     llm_config = read_llm_params(args.get("llm", {}))
     llm = load_llm("entity_extraction", llm_config, callbacks=callbacks, cache=cache)
     return await run_extract_entities(llm, docs, entity_types, callbacks, args)

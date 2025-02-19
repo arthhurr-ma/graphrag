@@ -143,6 +143,13 @@ async def summarize_descriptions(
                 strategy_config,
             )
             ticker(1)
+
+        #log.info(f"Result Object before Token Access: {results}")
+        #if hasattr(results, "token_counts") and results.token_counts:
+        #    log.info(f"Token Usage for summarize_descriptions id {id}: {results.token_counts}")
+        #else:
+        #    log.warning(f"No token usage information found for summarize_descriptions id {id}")
+
         return results
 
     semaphore = asyncio.Semaphore(num_threads)

@@ -4,6 +4,7 @@
 """A module containing run_workflow method definition."""
 
 import pandas as pd
+from typing import Dict, Callable
 
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.config.models.graph_rag_config import GraphRagConfig
@@ -16,7 +17,6 @@ from graphrag.index.operations.snapshot_graphml import snapshot_graphml
 from graphrag.utils.storage import load_table_from_storage, write_table_to_storage
 
 workflow_name = "extract_graph"
-
 
 async def run_workflow(
     config: GraphRagConfig,

@@ -5,7 +5,8 @@
 
 import logging
 import traceback
-
+from collections.abc import Callable
+from typing import Dict
 from fnllm import ChatLLM
 
 from graphrag.cache.pipeline_cache import PipelineCache
@@ -31,8 +32,12 @@ async def run_graph_intelligence(
     callbacks: WorkflowCallbacks,
     cache: PipelineCache,
     args: StrategyConfig,
+    token_callback: Callable[[Dict[str, int]], None] = None
 ) -> CommunityReport | None:
     """Run the graph intelligence entity extraction strategy."""
+
+    log.info(f"run_graph_intelligence_SC called with token_callback: {token_callback}")
+
     llm_config = read_llm_params(args.get("llm", {}))
     llm = load_llm("community_reporting", llm_config, callbacks=callbacks, cache=cache)
     return await _run_extractor(llm, community, input, level, args, callbacks)

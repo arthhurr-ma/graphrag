@@ -4,9 +4,9 @@
 """A module containing create_input method definition."""
 
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable 
 from pathlib import Path
-from typing import cast
+from typing import cast, Dict, Any, Callable
 
 import pandas as pd
 
@@ -22,10 +22,14 @@ from graphrag.logger.null_progress import NullProgressLogger
 from graphrag.storage.blob_pipeline_storage import BlobPipelineStorage
 from graphrag.storage.file_pipeline_storage import FilePipelineStorage
 
+
+md = "md"
+
 log = logging.getLogger(__name__)
 loaders: dict[str, Callable[..., Awaitable[pd.DataFrame]]] = {
     text: load_text,
     csv: load_csv,
+    md: load_text,
 }
 
 
@@ -33,6 +37,7 @@ async def create_input(
     config: PipelineInputConfig | InputConfig,
     progress_reporter: ProgressLogger | None = None,
     root_dir: str | None = None,
+    token_callback: Callable[[Dict[str, int]], None] = None,
 ) -> pd.DataFrame:
     """Instantiate input data for a pipeline."""
     root_dir = root_dir or ""

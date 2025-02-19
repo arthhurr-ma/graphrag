@@ -4,6 +4,7 @@
 """A module containing run_workflow method definition."""
 
 import pandas as pd
+from typing import cast, Dict, Any, Callable
 
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.config.models.graph_rag_config import GraphRagConfig
@@ -16,11 +17,10 @@ from graphrag.utils.storage import load_table_from_storage
 
 workflow_name = "generate_text_embeddings"
 
-
 async def run_workflow(
     config: GraphRagConfig,
     context: PipelineRunContext,
-    callbacks: WorkflowCallbacks,
+    callbacks: WorkflowCallbacks, 
 ) -> pd.DataFrame | None:
     """All the steps to transform community reports."""
     final_documents = await load_table_from_storage(

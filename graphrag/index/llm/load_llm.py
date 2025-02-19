@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, AsyncGenerator, Callable
 
 from fnllm import ChatLLM, EmbeddingsLLM, JsonStrategy, LLMEvents
 from fnllm.caching import Cache as LLMCache
@@ -108,8 +108,12 @@ def load_llm(
     callbacks: WorkflowCallbacks,
     cache: PipelineCache | None,
     chat_only=False,
+    token_callback: Callable[[Dict[str, int]], None] = None,
 ) -> ChatLLM:
     """Load the LLM for the entity extraction chain."""
+
+    log.debug(f"Loading LLM {name} with config {config}")
+
     singleton_llm = ChatLLMSingleton().get_llm(name)
     if singleton_llm is not None:
         return singleton_llm
@@ -123,7 +127,7 @@ def load_llm(
             raise ValueError(msg)
 
         loader = loaders[llm_type]
-        llm_instance = loader["load"](on_error, create_cache(cache, name), config)
+        llm_instance = loader["load"](on_error, create_cache(cache, name), config, token_callback=token_callback)
         ChatLLMSingleton().set_llm(name, llm_instance)
         return llm_instance
 
@@ -138,6 +142,7 @@ def load_llm_embeddings(
     callbacks: WorkflowCallbacks,
     cache: PipelineCache | None,
     chat_only=False,
+    token_callback: Callable[[Dict[str, int]], None] = None,
 ) -> EmbeddingsLLM:
     """Load the LLM for the entity extraction chain."""
     singleton_llm = EmbeddingsLLMSingleton().get_llm(name)
@@ -151,7 +156,7 @@ def load_llm_embeddings(
             msg = f"LLM type {llm_type} does not support chat"
             raise ValueError(msg)
         llm_instance = loaders[llm_type]["load"](
-            on_error, create_cache(cache, name), llm_config or {}
+            on_error, create_cache(cache, name), llm_config or {}, token_callback=token_callback
         )
         EmbeddingsLLMSingleton().set_llm(name, llm_instance)
         return llm_instance
@@ -175,12 +180,14 @@ def _load_openai_chat_llm(
     on_error: ErrorHandlerFn,
     cache: LLMCache,
     config: LLMParameters,
+    token_callback: Callable[[Dict[str, int]], None] = None,
     azure=False,
 ):
     return _create_openai_chat_llm(
         _create_openai_config(config, azure),
         on_error,
         cache,
+        token_callback=token_callback,
     )
 
 
@@ -188,12 +195,14 @@ def _load_openai_embeddings_llm(
     on_error: ErrorHandlerFn,
     cache: LLMCache,
     config: LLMParameters,
+    token_callback: Callable[[Dict[str, int]], None] = None,
     azure=False,
 ):
     return _create_openai_embeddings_llm(
         _create_openai_config(config, azure),
         on_error,
         cache,
+        token_callback=token_callback
     )
 
 
@@ -265,7 +274,7 @@ def _load_azure_openai_embeddings_llm(
 
 
 def _load_static_response(
-    _on_error: ErrorHandlerFn, _cache: PipelineCache, config: LLMParameters
+    _on_error: ErrorHandlerFn, _cache: PipelineCache, config: LLMParameters, token_callback: Callable[[Dict[str, int]], None] = None
 ) -> ChatLLM:
     if config.responses is None:
         msg = "Static response LLM requires responses"
@@ -301,6 +310,7 @@ def _create_openai_chat_llm(
     configuration: OpenAIConfig,
     on_error: ErrorHandlerFn,
     cache: LLMCache,
+    token_callback: Callable[[Dict[str, int]], None] = None
 ) -> ChatLLM:
     """Create an openAI chat llm."""
     client = create_openai_client(configuration)
@@ -316,6 +326,7 @@ def _create_openai_embeddings_llm(
     configuration: OpenAIConfig,
     on_error: ErrorHandlerFn,
     cache: LLMCache,
+    token_callback: Callable[[Dict[str, int]], None] = None
 ) -> EmbeddingsLLM:
     """Create an openAI embeddings llm."""
     client = create_openai_client(configuration)

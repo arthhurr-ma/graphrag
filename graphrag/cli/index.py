@@ -13,9 +13,10 @@ from pathlib import Path
 import graphrag.api as api
 from graphrag.config.enums import CacheType
 from graphrag.config.load_config import load_config
-from graphrag.config.logging import enable_logging_with_config
+from graphrag.logger.callback import Token_Callback
 from graphrag.config.resolve_path import resolve_paths
 from graphrag.index.validate_config import validate_config_names
+from graphrag.config.logging import enable_logging_with_config, enable_logging
 from graphrag.logger.base import ProgressLogger
 from graphrag.logger.factory import LoggerFactory, LoggerType
 from graphrag.utils.cli import redact
@@ -74,9 +75,14 @@ def index_cli(
     dry_run: bool,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,  
+
 ):
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
+
+    progress_logger = LoggerFactory().create_logger(logger, method="index")
 
     _run_index(
         config=config,
@@ -84,10 +90,12 @@ def index_cli(
         resume=resume,
         memprofile=memprofile,
         cache=cache,
-        logger=logger,
+        logger=progress_logger,
         dry_run=dry_run,
         skip_validation=skip_validation,
         output_dir=output_dir,
+        logging_enabled=logging_enabled,  
+        log_path=log_path, 
     )
 
 
@@ -100,9 +108,16 @@ def update_cli(
     config_filepath: Path | None,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,
 ):
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
+    progress_logger = LoggerFactory().create_logger(logger, method="update")
+
+
+    logging_enabled, log_path = enable_logging_with_config(config)
+
 
     # Check if update storage exist, if not configure it with default values
     if not config.update_index_storage:
@@ -120,10 +135,12 @@ def update_cli(
         resume=False,
         memprofile=memprofile,
         cache=cache,
-        logger=logger,
+        logger=progress_logger,
         dry_run=False,
         skip_validation=skip_validation,
         output_dir=output_dir,
+        logging_enabled=logging_enabled,  
+        log_path=log_path, 
     )
 
 
@@ -137,21 +154,48 @@ def _run_index(
     dry_run,
     skip_validation,
     output_dir,
+    logging_enabled, 
+    log_path, 
 ):
-    progress_logger = LoggerFactory().create_logger(logger)
-    info, error, success = _logger(progress_logger)
+    info, error, success = _logger(logger)
     run_id = resume or time.strftime("%Y%m%d-%H%M%S")
+    log.info(f"Type of config: {type(config)}")
+    log.info(f"config: {config}")
 
-    config.storage.base_dir = str(output_dir) if output_dir else config.storage.base_dir
-    config.reporting.base_dir = (
-        str(output_dir) if output_dir else config.reporting.base_dir
-    )
+    # Check if output_dir is a valid path
+    if output_dir is not None and not isinstance(output_dir, Path):
+        try:
+            output_dir = Path(output_dir)  # Try converting to Path
+        except TypeError:
+            raise TypeError("output_dir parameter must be a valid string or Path object.")
+
+    # Ensure config.storage is not None and .base_dir is a string before conversion
+    if hasattr(config, "storage") and config.storage and isinstance(config.storage.base_dir, (str, Path)):
+        config.storage.base_dir = str(output_dir) if output_dir else str(config.storage.base_dir)  # Convert Path to str
+    else:
+        config.storage.base_dir = str(output_dir) if output_dir else ""
+
+    # Ensure config.reporting is not None and .base_dir is a string before conversion
+    if hasattr(config, "reporting") and config.reporting and isinstance(config.reporting.base_dir, (str, Path)):
+        config.reporting.base_dir = (str(output_dir) if output_dir else str(config.reporting.base_dir) 
+        )
+    else:
+        config.reporting.base_dir = str(output_dir) if output_dir else ""
+
+    # Log resolved paths and their types for verification
+    log.info(f"config.storage.base_dir: {config.storage.base_dir}, type: {type(config.storage.base_dir)}")
+    log.info(f"config.reporting.base_dir: {config.reporting.base_dir}, type: {type(config.reporting.base_dir)}")    
+    
     resolve_paths(config, run_id)
 
     if not cache:
         config.cache.type = CacheType.none
 
-    enabled_logging, log_path = enable_logging_with_config(config, verbose)
+    log.info("Before enable_logging_with_config") 
+    log.info(f"config.reporting.base_dir: {config.reporting.base_dir}, type: {type(config.reporting.base_dir)}")
+
+    enabled_logging, log_path = enable_logging_with_config(config)
+    log.info("After enable_logging_with_config") 
     if enabled_logging:
         info(f"Logging enabled at {log_path}", True)
     else:
@@ -159,9 +203,10 @@ def _run_index(
             f"Logging not enabled for config {redact(config.model_dump())}",
             True,
         )
-
+    log.info("Before skip_validation check")
     if skip_validation:
-        validate_config_names(progress_logger, config)
+        validate_config_names(logger, config)
+    log.info("After skip_validation check")
 
     info(f"Starting pipeline run for: {run_id}, {dry_run=}", verbose)
     info(
@@ -173,6 +218,7 @@ def _run_index(
         info("Dry run complete, exiting...", True)
         sys.exit(0)
 
+    token_callback = Token_Callback()
     _register_signal_handlers(progress_logger)
 
     outputs = asyncio.run(
@@ -182,6 +228,7 @@ def _run_index(
             is_resume_run=bool(resume),
             memory_profile=memprofile,
             progress_logger=progress_logger,
+            token_callback=token_callback.extract_and_aggregate
         )
     )
     encountered_errors = any(
@@ -195,5 +242,7 @@ def _run_index(
         )
     else:
         success("All workflows completed successfully.", True)
+
+    token_callback.print_stats()
 
     sys.exit(1 if encountered_errors else 0)

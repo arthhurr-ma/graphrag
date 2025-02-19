@@ -7,8 +7,8 @@ import asyncio
 import inspect
 import logging
 import traceback
-from collections.abc import Awaitable, Callable, Coroutine, Hashable
-from typing import Any, TypeVar, cast
+from collections.abc import Awaitable, Coroutine, Hashable
+from typing import Any, TypeVar, cast, Callable
 
 import pandas as pd
 
@@ -113,7 +113,6 @@ async def derive_from_rows_asyncio(
 
 
 ItemType = TypeVar("ItemType")
-
 ExecuteFn = Callable[[tuple[Hashable, pd.Series]], Awaitable[ItemType | None]]
 GatherFn = Callable[[ExecuteFn], Awaitable[list[ItemType | None]]]
 
@@ -130,27 +129,31 @@ async def _derive_from_rows_base(
     This is useful for IO bound operations.
     """
     tick = progress_ticker(callbacks.progress, num_total=len(input))
-    errors: list[tuple[BaseException, str]] = []
+    errors: list[BaseException] = []
 
     async def execute(row: tuple[Any, pd.Series]) -> ItemType | None:
         try:
+            logger.debug(f"Transforming row: {row[1].to_dict()}")
             result = transform(row[1])
             if inspect.iscoroutine(result):
                 result = await result
-        except Exception as e:  # noqa: BLE001
-            errors.append((e, traceback.format_exc()))
-            return None
-        else:
             return cast("ItemType", result)
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Error processing row {row[0]} with data: {row[1]}")
+            logger.debug(f"Row data type: {type(row[1])}")
+            logger.debug(f"Exception: {str(e)}")
+            logger.debug(f"Stack trace: {traceback.format_exc()}")
+            return None
         finally:
             tick(1)
 
     result = await gather(execute)
 
-    tick.done()
+    #for error, stack, row_index in errors:
+    #    logger.error(f"Error in row {row_index}: {error}")
 
-    for error, stack in errors:
-        callbacks.error("parallel transformation error", error, stack)
+    for error in errors:
+        callbacks.error("parallel transformation error", error)
 
     if len(errors) > 0:
         raise ParallelizationError(len(errors))

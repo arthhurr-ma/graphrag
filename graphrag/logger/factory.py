@@ -4,6 +4,7 @@
 """Factory functions for creating loggers."""
 
 from typing import ClassVar
+import os
 
 from graphrag.logger.base import ProgressLogger
 from graphrag.logger.null_progress import NullProgressLogger
@@ -24,11 +25,18 @@ class LoggerFactory:
 
     @classmethod
     def create_logger(
-        cls, logger_type: LoggerType | str, kwargs: dict | None = None
+        cls, logger_type: LoggerType | str, method: str, kwargs: dict | None = None
     ) -> ProgressLogger:
         """Create a logger based on the provided type."""
         if kwargs is None:
             kwargs = {}
+
+        log_file_path = None
+        if method:
+            log_file_path = os.path.join("output", method, "example.log")
+        if log_file_path:
+            os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
         match logger_type:
             case LoggerType.RICH:
                 return RichProgressLogger("GraphRAG Indexer ")

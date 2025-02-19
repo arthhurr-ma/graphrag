@@ -4,6 +4,8 @@
 """A module containing run_workflow method definition."""
 
 import pandas as pd
+import logging
+from typing import cast, Dict, Any, Callable
 
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.config.models.graph_rag_config import GraphRagConfig

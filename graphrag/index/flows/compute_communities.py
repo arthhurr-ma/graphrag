@@ -4,6 +4,7 @@
 """All the steps to create the base entity graph."""
 
 import pandas as pd
+from typing import cast, Dict, Any, Callable
 
 from graphrag.index.operations.cluster_graph import cluster_graph
 from graphrag.index.operations.create_graph import create_graph
@@ -14,6 +15,7 @@ def compute_communities(
     max_cluster_size: int,
     use_lcc: bool,
     seed: int | None = None,
+    token_callback: Callable[[Dict[str, int]], None]| None = None, 
 ) -> pd.DataFrame:
     """All the steps to create the base entity graph."""
     graph = create_graph(base_relationship_edges)

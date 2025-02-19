@@ -4,6 +4,7 @@
 """A module containing run_workflow method definition."""
 
 import pandas as pd
+from typing import cast, Dict, Any, Callable
 
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.config.models.graph_rag_config import GraphRagConfig
@@ -14,7 +15,6 @@ from graphrag.index.flows.create_final_text_units import (
 from graphrag.utils.storage import load_table_from_storage, write_table_to_storage
 
 workflow_name = "create_final_text_units"
-
 
 async def run_workflow(
     config: GraphRagConfig,

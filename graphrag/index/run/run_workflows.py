@@ -7,8 +7,10 @@ import json
 import logging
 import time
 import traceback
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, Callable
 from dataclasses import asdict
+from typing import Dict
+
 
 import pandas as pd
 
@@ -59,6 +61,9 @@ async def run_workflows(
     is_update_run: bool = False,
 ) -> AsyncIterable[PipelineRunResult]:
     """Run all workflows using a simplified pipeline."""
+
+    log.info("Running aysnc workflows: %s", workflows)
+
     run_id = run_id or time.strftime("%Y%m%d-%H%M%S")
     root_dir = config.root_dir or ""
     progress_logger = logger or NullProgressLogger()

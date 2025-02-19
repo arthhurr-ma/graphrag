@@ -3,7 +3,8 @@
 
 """All the steps to create the base entity graph."""
 
-from typing import Any
+from typing import Any, Dict
+from collections.abc import Callable
 from uuid import uuid4
 
 import pandas as pd

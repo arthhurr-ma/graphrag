@@ -4,7 +4,7 @@
 """A module containing entity_extract methods."""
 
 import logging
-from typing import Any
+from typing import Any, Callable, Dict
 
 import pandas as pd
 
@@ -35,6 +35,7 @@ async def extract_entities(
     async_mode: AsyncType = AsyncType.AsyncIO,
     entity_types=DEFAULT_ENTITY_TYPES,
     num_threads: int = 4,
+    
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Extract entities from a piece of text.
@@ -93,7 +94,8 @@ async def extract_entities(
         type: nltk
     ```
     """
-    log.debug("entity_extract strategy=%s", strategy)
+
+
     if entity_types is None:
         entity_types = DEFAULT_ENTITY_TYPES
     strategy = strategy or {}
@@ -108,15 +110,18 @@ async def extract_entities(
         nonlocal num_started
         text = row[text_column]
         id = row[id_column]
-        result = await strategy_exec(
-            [Document(text=text, id=id)],
-            entity_types,
-            callbacks,
-            cache,
-            strategy_config,
+        try:
+            result = await strategy_exec(
+                [Document(text=text, id=id)],
+                entity_types,
+                callbacks,
+                cache,
+                strategy_config,
         )
-        num_started += 1
-        return [result.entities, result.relationships, result.graph]
+            num_started += 1
+            return [result.entities, result.relationships, result.graph]
+        except Exception as e:
+            log.error(f"Error processing row with id {id}: {e}", exc_info=True)
 
     results = await derive_from_rows(
         text_units,
@@ -133,8 +138,16 @@ async def extract_entities(
             entity_dfs.append(pd.DataFrame(result[0]))
             relationship_dfs.append(pd.DataFrame(result[1]))
 
-    entities = _merge_entities(entity_dfs)
-    relationships = _merge_relationships(relationship_dfs)
+    if not entity_dfs:
+        log.warning("No entities extracted, returning empty entity DataFrame.")
+        entities = pd.DataFrame()
+    else:
+        entities = _merge_entities(entity_dfs)
+    
+    if not relationship_dfs:
+        log.warning("No relationships extracted, returning empty relationship DataFrame.") 
+    else:
+        relationships = _merge_relationships(relationship_dfs)
 
     return (entities, relationships)
 

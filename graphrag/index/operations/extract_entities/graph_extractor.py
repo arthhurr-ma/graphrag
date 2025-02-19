@@ -5,16 +5,18 @@
 
 import logging
 import re
+import json
 import traceback
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, Dict
 
 import networkx as nx
 import tiktoken
 from fnllm import ChatLLM
 
 import graphrag.config.defaults as defs
+from graphrag.logger.callback import Token_Callback
 from graphrag.index.typing import ErrorHandlerFn
 from graphrag.index.utils.string import clean_str
 from graphrag.prompts.index.entity_extraction import (
@@ -37,6 +39,7 @@ class GraphExtractionResult:
 
     output: nx.Graph
     source_docs: dict[Any, Any]
+    token_counts: Dict[str, int] | None = None
 
 
 class GraphExtractor:
@@ -56,6 +59,8 @@ class GraphExtractor:
     _loop_args: dict[str, Any]
     _max_gleanings: int
     _on_error: ErrorHandlerFn
+    _token_callback: Callable[[Dict[str, int]], None] | None 
+
 
     def __init__(
         self,
@@ -70,6 +75,7 @@ class GraphExtractor:
         encoding_model: str | None = None,
         max_gleanings: int | None = None,
         on_error: ErrorHandlerFn | None = None,
+        token_callback: Callable[[Dict[str, int]], None] | None = None,
     ):
         """Init method definition."""
         # TODO: streamline construction
@@ -89,6 +95,7 @@ class GraphExtractor:
             else defs.ENTITY_EXTRACTION_MAX_GLEANINGS
         )
         self._on_error = on_error or (lambda _e, _s, _d: None)
+        self._token_callback = token_callback
 
         # Construct the looping arguments
         encoding = tiktoken.get_encoding(encoding_model or defs.ENCODING_MODEL)
@@ -152,38 +159,55 @@ class GraphExtractor:
     async def _process_document(
         self, text: str, prompt_variables: dict[str, str]
     ) -> str:
-        response = await self._llm(
-            self._extraction_prompt.format(**{
-                **prompt_variables,
-                self._input_text_key: text,
-            }),
-        )
-        results = response.output.content or ""
 
-        # Repeat to ensure we maximize entity count
-        for i in range(self._max_gleanings):
+        try:
             response = await self._llm(
-                CONTINUE_PROMPT,
-                name=f"extract-continuation-{i}",
-                history=response.history,
-            )
-            results += response.output.content or ""
-
-            # if this is the final glean, don't bother updating the continuation flag
-            if i >= self._max_gleanings - 1:
-                break
-
-            response = await self._llm(
-                LOOP_PROMPT,
-                name=f"extract-loopcheck-{i}",
-                history=response.history,
-                model_parameters=self._loop_args,
+                self._extraction_prompt.format(**{
+                    **prompt_variables,
+                    self._input_text_key: text,
+                }),
             )
 
-            if response.output.content != "Y":
-                break
+            results = response.output.content or ""
+            log.info(f"LLMOutput Metrics: {response.metrics}")
 
-        return results
+            if self._token_callback and hasattr(response.metrics, "usage"):
+                log.info("Processing token usage information.")
+                self.token_callback.extract_and_aggregate(response.metrics, "graph_extractor")
+            else:
+                log.warning("LLM response does not contain 'metrics' attribute.")
+
+
+            
+            # Repeat to ensure we maximize entity count
+            for i in range(self._max_gleanings):
+                log.info(f"Entity extraction iteration {i+1}/{self._max_gleanings}") 
+                response = await self._llm(
+                    CONTINUE_PROMPT,
+                    name=f"extract-continuation-{i}",
+                    history=response.history,
+                )
+                results += response.output.content or ""
+
+                # if this is the final glean, don't bother updating the continuation flag
+                if i >= self._max_gleanings - 1:
+                    break
+
+                response = await self._llm(
+                    LOOP_PROMPT,
+                    name=f"extract-loopcheck-{i}",
+                    history=response.history,
+                    model_parameters=self._loop_args,
+                )
+
+                if response.output.content != "Y":
+                    break
+
+            return results
+        except Exception as e:
+            log.exception(f"Error in GraphExtractor._process_document: {e}")
+            self._on_error(e, traceback.format_exc(), prompt_variables)            
+            raise
 
     async def _process_results(
         self,

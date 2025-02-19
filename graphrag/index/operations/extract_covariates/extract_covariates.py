@@ -109,6 +109,10 @@ async def run_claim_extraction(
 
     input = [input] if isinstance(input, str) else input
 
+    input_token_count = sum([len(text.split()) for text in input])  
+    log.info("Processing %d texts with a total of %d input tokens", len(input), input_token_count)
+
+
     results = await extractor({
         "input_text": input,
         "entity_specs": entity_types,

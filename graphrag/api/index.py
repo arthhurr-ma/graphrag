@@ -9,6 +9,7 @@ Backwards compatibility is not guaranteed at this time.
 """
 
 import logging
+from typing import cast, Dict, Any, Callable
 
 from graphrag.cache.noop_pipeline_cache import NoopPipelineCache
 from graphrag.callbacks.factory import create_pipeline_reporter

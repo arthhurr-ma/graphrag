@@ -12,6 +12,7 @@ from fnllm import ChatLLM
 from pydantic import BaseModel, Field
 
 from graphrag.index.typing import ErrorHandlerFn
+from graphrag.logger.callback import Token_Callback
 from graphrag.prompts.index.community_report import COMMUNITY_REPORT_PROMPT
 
 log = logging.getLogger(__name__)
@@ -84,6 +85,14 @@ class CommunityReportsExtractor:
                 json_model=CommunityReportResponse,
                 model_parameters={"max_tokens": self._max_report_length},
             )
+
+
+            if self._token_callback and hasattr(response.metrics, "usage"):
+                log.info("Processing token usage information.")
+                self.token_callback.extract_and_aggregate(response.metrics, "graph_extractor")
+            else:
+                log.warning("LLM response does not contain 'metrics' attribute.")
+
             output = response.parsed_json
         except Exception as e:
             log.exception("error generating community report")

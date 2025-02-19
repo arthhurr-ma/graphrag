@@ -4,6 +4,7 @@
 """Default method for loading config."""
 
 from pathlib import Path
+import logging
 
 from graphrag.config.config_file_loader import (
     load_config_from_file,
@@ -11,6 +12,8 @@ from graphrag.config.config_file_loader import (
 )
 from graphrag.config.create_graphrag_config import create_graphrag_config
 from graphrag.config.models.graph_rag_config import GraphRagConfig
+
+log = logging.getLogger(__name__)
 
 
 def load_config(
@@ -32,16 +35,20 @@ def load_config(
     """
     root = root_dir.resolve()
 
+    log.info(f"Loading configuration with root directory: {root}")
+
     # If user specified a config file path then it is required
     if config_filepath:
         config_path = config_filepath.resolve()
         if not config_path.exists():
             msg = f"Specified Config file not found: {config_path}"
             raise FileNotFoundError(msg)
+        log.info(f"Loading config from specified file: {config_path}")
     else:
         # resolve config filepath from the root directory if it exists
         config_path = search_for_config_in_root_dir(root)
     if config_path:
+        log.info(f"Config found at: {config_path}")
         config = load_config_from_file(config_path)
     else:
         config = create_graphrag_config(root_dir=str(root))
