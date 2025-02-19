@@ -5,6 +5,7 @@
 
 import logging
 from pathlib import Path
+from datetime import datetime
 
 from graphrag.config.enums import ReportingType
 from graphrag.config.models.graph_rag_config import GraphRagConfig

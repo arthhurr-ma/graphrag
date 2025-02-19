@@ -194,6 +194,7 @@ def _run_index(
     log.info("Before enable_logging_with_config") 
     log.info(f"config.reporting.base_dir: {config.reporting.base_dir}, type: {type(config.reporting.base_dir)}")
 
+    root_dir = Path("./scalingtest")
     enabled_logging, log_path = enable_logging_with_config(config, root_dir, method="index")
     log.info("After enable_logging_with_config") 
     if enabled_logging:
@@ -219,7 +220,7 @@ def _run_index(
         sys.exit(0)
 
     token_callback = Token_Callback()
-    _register_signal_handlers(progress_logger)
+    _register_signal_handlers(logger)
 
     outputs = asyncio.run(
         api.build_index(
@@ -227,7 +228,7 @@ def _run_index(
             run_id=run_id,
             is_resume_run=bool(resume),
             memory_profile=memprofile,
-            progress_logger=progress_logger,
+            progress_logger=logger,
             token_callback=token_callback.extract_and_aggregate
         )
     )
