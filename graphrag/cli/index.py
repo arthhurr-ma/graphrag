@@ -116,7 +116,7 @@ def update_cli(
     progress_logger = LoggerFactory().create_logger(logger, method="update")
 
 
-    logging_enabled, log_path = enable_logging_with_config(config)
+    logging_enabled, log_path = enable_logging_with_config(config, root_dir, method="update")
 
 
     # Check if update storage exist, if not configure it with default values
@@ -194,7 +194,7 @@ def _run_index(
     log.info("Before enable_logging_with_config") 
     log.info(f"config.reporting.base_dir: {config.reporting.base_dir}, type: {type(config.reporting.base_dir)}")
 
-    enabled_logging, log_path = enable_logging_with_config(config)
+    enabled_logging, log_path = enable_logging_with_config(config, root_dir, method="index")
     log.info("After enable_logging_with_config") 
     if enabled_logging:
         info(f"Logging enabled at {log_path}", True)

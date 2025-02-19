@@ -179,42 +179,20 @@ def _index_cli(
     actual_logger = LoggerFactory().create_logger(logger, method="index")
     actual_logger.info(f"Executing index")
 
-    logging_enabled, log_path = enable_logging_with_config(config, method="index")
+    logging_enabled, log_path = enable_logging_with_config(config, root, method="index")
 
     log_dir = root / "logs" / "index"
     if not log_dir.exists():
         log_dir.mkdir(parents=True, exist_ok=True)
-        actual_logger.info(f"Log directory resolved to: {log_dir}")
-    else:
-        actual_logger.error(f"Invalid root directory: {root}. Cannot construct log path.")
-        raise ValueError("root is None or invalid.")
-            
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_file_name = f"index_{timestamp}.log"
+    log_file_name = f"index{timestamp}.log"
     log_path = log_dir / log_file_name
     enable_logging(log_path)
     logging_enabled = True
 
     if logging_enabled:
         actual_logger.info(f"Logging enabled for index. Logs will be written to: {log_path}")
-
-    config_obj = None
-    try:
-        if config:
-            actual_logger.info(f"Opening config file: {config}")
-            with open(config, 'r') as f:
-                config_dict = yaml.safe_load(f)
-            config_obj = GraphRagConfig(**config_dict)
-        else:
-            actual_logger.warning("No config file provided; using default settings (if available).")
-
-    except (FileNotFoundError, yaml.YAMLError, Exception) as e:
-        if config:
-            actual_logger.error(f"Error loading or parsing config file: {e}")
-            raise typer.Exit(code=1)  
-        else:
-            actual_logger.warning("No config file provided; using default settings (if available).")
 
     from graphrag.cli.index import index_cli
 
@@ -293,7 +271,7 @@ def _update_cli(
     actual_logger.info(f"Executing update")
  
 
-    logging_enabled, log_path = enable_logging_with_config(config, method="update")
+    logging_enabled, log_path = enable_logging_with_config(config, root, method="update")
  
     log_dir = root / "logs" / "update"
     if not log_dir.exists():
@@ -506,7 +484,7 @@ def _query_cli(
     logger.info(f"Executing query: {query}")
 
     if config: 
-        logging_enabled, log_path = enable_logging_with_config(config, method="query")
+        logging_enabled, log_path = enable_logging_with_config(config, root, method="query")
     else:       
         log_dir = root / "logs" / "query"
         if not log_dir.exists():
