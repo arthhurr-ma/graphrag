@@ -57,8 +57,8 @@ def enable_logging_with_config(
     """
     if config.reporting.type == ReportingType.file:
         timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-        method_log_dir = Path(config.reporting.base_dir).joinpath("output", method)
-        log_path = method_log_dir.joinpath(f"{method}_{timestamp}.log")
+        method_log_dir = Path(config.reporting.base_dir) / method
+        log_path = method_log_dir / f"{method}_{timestamp}.log"
         enable_logging(log_path, verbose)
         return (True, str(log_path))
     return (False, "")

@@ -3,12 +3,14 @@
 
 """A module containing 'GraphExtractionResult' and 'GraphExtractor' models."""
 
+import logging
 import json
 from dataclasses import dataclass
 
 from fnllm import ChatLLM
 
 from graphrag.index.typing import ErrorHandlerFn
+from graphrag.callbacks.token_callback import Token_Callback
 from graphrag.index.utils.tokens import num_tokens_from_string
 from graphrag.prompts.index.summarize_descriptions import SUMMARIZE_PROMPT
 
@@ -17,6 +19,7 @@ DEFAULT_MAX_INPUT_TOKENS = 4_000
 # Max token count for LLM answers
 DEFAULT_MAX_SUMMARY_LENGTH = 500
 
+log = logging.getLogger(__name__)
 
 @dataclass
 class SummarizationResult:
@@ -136,5 +139,15 @@ class SummarizeExtractor:
             name="summarize",
             model_parameters={"max_tokens": self._max_summary_length},
         )
+
+        results = response.output.content or ""
+        log.info(f"LLMOutput Metrics: {response.metrics}")
+
+        #if self._token_callback and hasattr(response.metrics, "usage"):
+        #    log.info("Processing token usage information.")
+        #    self.token_callback.extract_and_aggregate(response.metrics, "graph_extractor")
+        #else:
+        #    log.warning("LLM response does not contain 'metrics' attribute.")
+
         # Calculate result
         return str(response.output.content)

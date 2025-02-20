@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from graphrag.cache.pipeline_cache import PipelineCache
+from graphrag.callbacks.token_callback import Token_Callback
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.index.operations.embed_text.strategies.typing import TextEmbeddingStrategy
 from graphrag.utils.embeddings import create_collection_name
@@ -119,6 +120,9 @@ async def _text_embed_in_memory(
     strategy_args = {**strategy}
 
     texts: list[str] = input[embed_column].to_numpy().tolist()
+    
+    token_count = sum([len(text.split()) for text in texts]) 
+    log.info(f"Embedding {len(texts)} texts with a total of {token_count} input tokens.")
     result = await strategy_exec(texts, callbacks, cache, strategy_args)
 
     return result.embeddings
@@ -176,6 +180,10 @@ async def _text_embed_with_vector_store(
         texts: list[str] = batch[embed_column].to_numpy().tolist()
         titles: list[str] = batch[title].to_numpy().tolist()
         ids: list[str] = batch[id_column].to_numpy().tolist()
+
+        input_token_count = sum([len(text.split()) for text in texts])  
+        log.info(f"Embedding batch {i+1}/{len(input) // insert_batch_size + 1} with {len(texts)} texts, using {input_token_count} input tokens.")
+
         result = await strategy_exec(
             texts,
             callbacks,
@@ -206,6 +214,10 @@ async def _text_embed_with_vector_store(
         vector_store.load_documents(documents, overwrite and i == 0)
         starting_index += len(documents)
         i += 1
+
+
+    total_input_tokens = sum([len(text.split()) for text in input[embed_column]])
+    log.info(f"Total embedding process used {total_input_tokens} tokens.")
 
     return all_results
 
