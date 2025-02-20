@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from fnllm import ChatLLM
 
 from graphrag.index.typing import ErrorHandlerFn
-from graphrag.callbacks.token_callback import Token_Callback
+#from graphrag.callbacks.token_counter import Token_Counter
 from graphrag.index.utils.tokens import num_tokens_from_string
 from graphrag.prompts.index.summarize_descriptions import SUMMARIZE_PROMPT
 
@@ -141,13 +141,7 @@ class SummarizeExtractor:
         )
 
         results = response.output.content or ""
-        log.info(f"LLMOutput Metrics: {response.metrics}")
-
-        #if self._token_callback and hasattr(response.metrics, "usage"):
-        #    log.info("Processing token usage information.")
-        #    self.token_callback.extract_and_aggregate(response.metrics, "graph_extractor")
-        #else:
-        #    log.warning("LLM response does not contain 'metrics' attribute.")
+        log.info(f"LLMOutput Metrics: {response.metrics.usage}")
 
         # Calculate result
         return str(response.output.content)

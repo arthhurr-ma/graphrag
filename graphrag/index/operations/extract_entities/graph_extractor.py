@@ -16,7 +16,7 @@ import tiktoken
 from fnllm import ChatLLM
 
 import graphrag.config.defaults as defs
-from graphrag.callbacks.token_callback import Token_Callback
+from graphrag.callbacks.token_counter import Token_Counter 
 from graphrag.index.typing import ErrorHandlerFn
 from graphrag.index.utils.string import clean_str
 from graphrag.prompts.index.entity_extraction import (
@@ -33,13 +33,15 @@ DEFAULT_ENTITY_TYPES = ["organization", "person", "geo", "event"]
 log = logging.getLogger(__name__)
 
 
+token_counter = Token_Counter()
+
 @dataclass
 class GraphExtractionResult:
     """Unipartite graph extraction result class definition."""
 
     output: nx.Graph
     source_docs: dict[Any, Any]
-    token_counts: Dict[str, int] | None = None
+
 
 
 class GraphExtractor:
@@ -59,7 +61,7 @@ class GraphExtractor:
     _loop_args: dict[str, Any]
     _max_gleanings: int
     _on_error: ErrorHandlerFn
-    _token_callback: Callable[[Dict[str, int]], None] | None 
+
 
 
     def __init__(
@@ -75,7 +77,7 @@ class GraphExtractor:
         encoding_model: str | None = None,
         max_gleanings: int | None = None,
         on_error: ErrorHandlerFn | None = None,
-        token_callback: Callable[[Dict[str, int]], None] | None = None,
+  
     ):
         """Init method definition."""
         # TODO: streamline construction
@@ -92,10 +94,12 @@ class GraphExtractor:
         self._max_gleanings = (
             max_gleanings
             if max_gleanings is not None
-            else defs.ENTITY_EXTRACTION_MAX_GLEANINGS
-        )
+            else defs.ENTITY_EXTRACTION_MAX_GLEANINGS)
         self._on_error = on_error or (lambda _e, _s, _d: None)
-        self._token_callback = token_callback
+
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_total_tokens = 0
 
         # Construct the looping arguments
         encoding = tiktoken.get_encoding(encoding_model or defs.ENCODING_MODEL)
@@ -151,13 +155,14 @@ class GraphExtractor:
             prompt_variables.get(self._record_delimiter_key, DEFAULT_RECORD_DELIMITER),
         )
 
+
         return GraphExtractionResult(
             output=output,
             source_docs=source_doc_map,
         )
 
     async def _process_document(
-        self, text: str, prompt_variables: dict[str, str]
+        self, text: str, prompt_variables: dict[str, str]#, token_callback: Token_Callback
     ) -> str:
 
         try:
@@ -167,18 +172,11 @@ class GraphExtractor:
                     self._input_text_key: text,
                 }),
             )
-
             results = response.output.content or ""
-            log.info(f"LLMOutput Metrics: {response.metrics}")
-
-            if self._token_callback and hasattr(response.metrics, "usage"):
-                log.info("Processing token usage information.")
-                self.token_callback.extract_and_aggregate(response.metrics, "graph_extractor")
-            else:
-                log.warning("LLM response does not contain 'metrics' attribute.")
 
 
-            
+            input_tokens, output_tokens, total_tokens = 0, 0, 0
+        
             # Repeat to ensure we maximize entity count
             for i in range(self._max_gleanings):
                 log.info(f"Entity extraction iteration {i+1}/{self._max_gleanings}") 
@@ -188,6 +186,9 @@ class GraphExtractor:
                     history=response.history,
                 )
                 results += response.output.content or ""
+                input_tokens += response.metrics.usage.input_tokens
+                output_tokens += response.metrics.usage.output_tokens
+                total_tokens += response.metrics.usage.total_tokens
 
                 # if this is the final glean, don't bother updating the continuation flag
                 if i >= self._max_gleanings - 1:
@@ -199,10 +200,18 @@ class GraphExtractor:
                     history=response.history,
                     model_parameters=self._loop_args,
                 )
+                input_tokens += response.metrics.usage.input_tokens
+                output_tokens += response.metrics.usage.output_tokens
+                total_tokens += response.metrics.usage.total_tokens
+
 
                 if response.output.content != "Y":
                     break
 
+            
+            token_counter._update_token_count("graph_extractor", input_tokens, output_tokens, total_tokens)
+            log.info(f"LLMOutput Metrics: {response.metrics.usage}")  
+            token_counter.print_stats()
             return results
         except Exception as e:
             log.exception(f"Error in GraphExtractor._process_document: {e}")

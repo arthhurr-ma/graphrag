@@ -9,6 +9,9 @@ import sys
 import time
 import warnings
 from pathlib import Path
+from typing import Optional
+
+
 
 import graphrag.api as api
 from graphrag.config.enums import CacheType
@@ -76,7 +79,8 @@ def index_cli(
     skip_validation: bool,
     output_dir: Path | None,
     logging_enabled: bool,  
-    log_path: str,  
+    log_path: str,
+    #token_callback: Optional[Token_Callback] = None,  
 ):
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
@@ -94,7 +98,7 @@ def index_cli(
         skip_validation=skip_validation,
         output_dir=output_dir,
         logging_enabled=logging_enabled,  
-        log_path=log_path, 
+        log_path=log_path,
         method="index",
     )
 
@@ -194,7 +198,6 @@ def _run_index(
         info("Dry run complete, exiting...", True)
         sys.exit(0)
 
-    #token_callback = Token_Callback()
     _register_signal_handlers(logger)
 
     outputs = asyncio.run(
@@ -204,7 +207,6 @@ def _run_index(
             is_resume_run=bool(resume),
             memory_profile=memprofile,
             progress_logger=logger,
-            #token_callback=token_callback.extract_and_aggregate
         )
     )
     encountered_errors = any(
@@ -219,6 +221,4 @@ def _run_index(
     else:
         success("All workflows completed successfully.", True)
 
-
-    #token_callback.print_stats()
     sys.exit(1 if encountered_errors else 0)
