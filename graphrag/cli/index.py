@@ -90,7 +90,7 @@ def index_cli(
     """Run the pipeline with the given config."""
     config = load_config(root_dir, config_filepath)
     progress_logger = LoggerFactory().create_logger(logger)
-    logging_enabled, log_path = enable_logging_with_config(config, method="update", verbose=verbose)
+    logging_enabled, log_path = enable_logging_with_config(config, method="index", verbose=verbose)
 
     _run_index(
         config=config,

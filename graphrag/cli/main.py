@@ -28,8 +28,6 @@ from graphrag.prompt_tune.types import DocSelectionType
 
 INVALID_METHOD_ERROR = "Invalid method"
 
-token_counter = Token_Counter()
-
 app = typer.Typer(
     help="GraphRAG: A graph-based retrieval-augmented generation (RAG) system.",
     no_args_is_help=True,

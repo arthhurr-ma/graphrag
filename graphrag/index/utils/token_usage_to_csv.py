@@ -43,8 +43,8 @@ def export_token_stats_to_csv(token_counter, root_dir):
                 entities_df = pd.read_parquet(os.path.join(root_dir, 'output', 'create_final_entities.parquet'), columns=['type'])
                 entities = entities_df.groupby("type").size().to_dict()  
 
-                communities_df = pd.read_parquet(os.path.join(root_dir, 'output', 'create_final_communities.parquet'), columns=['title'])
-                communities = communities_df.groupby("title").size().to_dict() 
+                communities_df = pd.read_parquet(os.path.join(root_dir, 'output', 'create_final_communities.parquet'), columns=['level'])
+                communities = communities_df.groupby("level").size().to_dict() 
 
                 stats = token_counter.get_token_counts()
                 chat_input_tokens = sum(stat["input_tokens"] for stat in stats.values())
