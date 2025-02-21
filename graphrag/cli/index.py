@@ -10,13 +10,16 @@ import time
 import warnings
 from pathlib import Path
 from typing import Optional
+import csv
+from datetime import datetime
 
 
 
 import graphrag.api as api
 from graphrag.config.enums import CacheType
 from graphrag.config.load_config import load_config
-#from graphrag.logger.callback import Token_Callback
+from graphrag.callbacks.token_counter import Token_Counter 
+from graphrag.index.utils.token_usage_to_csv import export_token_stats_to_csv
 from graphrag.config.resolve_path import resolve_paths
 from graphrag.index.validate_config import validate_config_names
 from graphrag.config.logging import enable_logging_with_config, enable_logging
@@ -28,6 +31,8 @@ from graphrag.utils.cli import redact
 warnings.filterwarnings("ignore", message=".*NumbaDeprecationWarning.*")
 
 log = logging.getLogger(__name__)
+
+token_counter = Token_Counter()
 
 
 def _logger(logger: ProgressLogger):
@@ -220,5 +225,12 @@ def _run_index(
         )
     else:
         success("All workflows completed successfully.", True)
+
+        token_counter.print_stats()
+        try:
+            export_token_stats_to_csv(token_counter, 'graphrag_moodys_v1.2.0')
+        except Exception as e:
+            log.error(f"Error during export_token_stats_to_csv process: {e}")
+        raise 
 
     sys.exit(1 if encountered_errors else 0)

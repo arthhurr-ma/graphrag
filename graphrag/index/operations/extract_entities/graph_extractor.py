@@ -97,10 +97,6 @@ class GraphExtractor:
             else defs.ENTITY_EXTRACTION_MAX_GLEANINGS)
         self._on_error = on_error or (lambda _e, _s, _d: None)
 
-        self.total_input_tokens = 0
-        self.total_output_tokens = 0
-        self.total_total_tokens = 0
-
         # Construct the looping arguments
         encoding = tiktoken.get_encoding(encoding_model or defs.ENCODING_MODEL)
         yes = f"{encoding.encode('Y')[0]}"
@@ -162,7 +158,7 @@ class GraphExtractor:
         )
 
     async def _process_document(
-        self, text: str, prompt_variables: dict[str, str]#, token_callback: Token_Callback
+        self, text: str, prompt_variables: dict[str, str]
     ) -> str:
 
         try:
@@ -211,7 +207,7 @@ class GraphExtractor:
             
             token_counter._update_token_count("graph_extractor", input_tokens, output_tokens, total_tokens)
             log.info(f"LLMOutput Metrics: {response.metrics.usage}")  
-            token_counter.print_stats()
+            #token_counter.print_stats()
             return results
         except Exception as e:
             log.exception(f"Error in GraphExtractor._process_document: {e}")

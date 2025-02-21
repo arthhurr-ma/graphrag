@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from graphrag.cache.pipeline_cache import PipelineCache
-#from graphrag.callbacks.token_counter import Token_Counter
+from graphrag.callbacks.token_counter import Token_Counter
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.index.operations.embed_text.strategies.typing import TextEmbeddingStrategy
 from graphrag.utils.embeddings import create_collection_name
@@ -19,6 +19,8 @@ from graphrag.vector_stores.base import BaseVectorStore, VectorStoreDocument
 from graphrag.vector_stores.factory import VectorStoreFactory
 
 log = logging.getLogger(__name__)
+
+token_counter = Token_Counter()
 
 # Per Azure OpenAI Limits
 # https://learn.microsoft.com/en-us/azure/ai-services/openai/reference
@@ -99,6 +101,7 @@ async def embed_text(
             title_column=title_column,
         )
 
+
     return await _text_embed_in_memory(
         input,
         callbacks,
@@ -120,10 +123,9 @@ async def _text_embed_in_memory(
     strategy_args = {**strategy}
 
     texts: list[str] = input[embed_column].to_numpy().tolist()
-    
-    #token_count = sum([len(text.split()) for text in texts]) 
-    #log.info(f"Embedding {len(texts)} texts with a total of {token_count} input tokens.")
     result = await strategy_exec(texts, callbacks, cache, strategy_args)
+
+    # do we need to add here?
 
     return result.embeddings
 
@@ -181,9 +183,6 @@ async def _text_embed_with_vector_store(
         titles: list[str] = batch[title].to_numpy().tolist()
         ids: list[str] = batch[id_column].to_numpy().tolist()
 
-        #input_token_count = sum([len(text.split()) for text in texts])  
-        #log.info(f"Embedding batch {i+1}/{len(input) // insert_batch_size + 1} with {len(texts)} texts, using {input_token_count} input tokens.")
-
         result = await strategy_exec(
             texts,
             callbacks,
@@ -218,6 +217,8 @@ async def _text_embed_with_vector_store(
 
     total_input_tokens = sum([len(text.split()) for text in input[embed_column]])
     log.info(f"Total embedding process used {total_input_tokens} tokens.")
+    token_counter._update_token_count("embed_text_extractor", total_input_tokens)
+    #token_counter.print_stats()
 
 
 

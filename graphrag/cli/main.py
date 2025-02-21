@@ -14,6 +14,8 @@ from datetime import datetime
 import typer
 from graphrag.config.logging import enable_logging_with_config, enable_logging
 from graphrag.config.load_config import load_config
+from graphrag.callbacks.token_counter import Token_Counter 
+from graphrag.config.load_config import load_config
 from graphrag.logger.types import LoggerType
 from graphrag.logger.factory import LoggerFactory
 from graphrag.prompt_tune.defaults import (
@@ -25,6 +27,8 @@ from graphrag.prompt_tune.defaults import (
 from graphrag.prompt_tune.types import DocSelectionType
 
 INVALID_METHOD_ERROR = "Invalid method"
+
+token_counter = Token_Counter()
 
 app = typer.Typer(
     help="GraphRAG: A graph-based retrieval-augmented generation (RAG) system.",
