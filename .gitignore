@@ -29,7 +29,6 @@ build.zip
 __pycache__
 
 .pipeline
-
 # Azurite
 temp_azurite/
 __azurite*.json
@@ -40,6 +39,8 @@ __blobstorage__/
 ragtest/
 .ragtest/
 graphrag_moodys_v1.2.0/
+graphrag_large_scaling_exp/
+graphrag/extra_storage
 .pipelines
 .pipeline
 

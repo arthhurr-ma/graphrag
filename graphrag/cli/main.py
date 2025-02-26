@@ -478,6 +478,9 @@ def _query_cli(
     ] = False,
 ):
     """Query a knowledge graph index."""
+
+    actual_logger = LoggerFactory().create_logger(LoggerType.RICH)
+    actual_logger.info(f"Executing query: {query}")
     from graphrag.cli.query import (
         run_basic_search,
         run_drift_search,
@@ -488,7 +491,7 @@ def _query_cli(
     try:
         match method:
             case SearchType.LOCAL:
-                logger.info("Running local search...")
+                actual_logger.info("Running local search...")
                 run_local_search(
                     config_filepath=config,
                     data_dir=data,
@@ -499,7 +502,7 @@ def _query_cli(
                     query=query,
                 )
             case SearchType.GLOBAL:
-                logger.info("Running global search...")
+                actual_logger.info("Running global search...")
                 run_global_search(
                     config_filepath=config,
                     data_dir=data,
@@ -511,7 +514,7 @@ def _query_cli(
                     query=query,
                 )
             case SearchType.DRIFT:
-                logger.info("Running drift search...")
+                actual_logger.info("Running drift search...")
                 run_drift_search(
                     config_filepath=config,
                     data_dir=data,
@@ -521,7 +524,7 @@ def _query_cli(
                     query=query,
                 )
             case SearchType.BASIC:
-                logger.info("Running basic search...")
+                actual_logger.info("Running basic search...")
                 run_basic_search(
                     config_filepath=config,
                     data_dir=data,
@@ -530,10 +533,10 @@ def _query_cli(
                     query=query,
                 )
             case _:
-                logger.error(f"Invalid method: {method}")
+                actual_logger.error(f"Invalid method: {method}")
                 raise ValueError(INVALID_METHOD_ERROR)
         
-        logger.success("Query execution completed successfully.")
+        actual_logger.info("Query execution completed successfully.")
         
     except Exception as e:
-        logger.error(f"An error occurred during query execution: {e}")
+        actual_logger.error(f"An error occurred during query execution: {e}")
