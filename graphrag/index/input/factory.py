@@ -20,11 +20,12 @@ from graphrag.logger.base import ProgressLogger
 from graphrag.logger.null_progress import NullProgressLogger
 from graphrag.storage.blob_pipeline_storage import BlobPipelineStorage
 from graphrag.storage.file_pipeline_storage import FilePipelineStorage
-
+md = "md"
 log = logging.getLogger(__name__)
 loaders: dict[str, Callable[..., Awaitable[pd.DataFrame]]] = {
     text: load_text,
     csv: load_csv,
+    md: load_text,
 }
 
 

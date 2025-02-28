@@ -5,15 +5,17 @@
 
 import logging
 import re
+import json
 import traceback
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, Dict
 
 import networkx as nx
 import tiktoken
 
 from graphrag.config.defaults import ENCODING_MODEL, graphrag_config_defaults
+from graphrag.callbacks.token_counter import Token_Counter 
 from graphrag.index.typing import ErrorHandlerFn
 from graphrag.index.utils.string import clean_str
 from graphrag.language_model.protocol.base import ChatModel
@@ -30,6 +32,7 @@ DEFAULT_ENTITY_TYPES = ["organization", "person", "geo", "event"]
 
 log = logging.getLogger(__name__)
 
+token_counter = Token_Counter()
 
 @dataclass
 class GraphExtractionResult:
@@ -160,6 +163,8 @@ class GraphExtractor:
         )
         results = response.output.content or ""
 
+        input_tokens, output_tokens, total_tokens = 0, 0, 0
+
         # Repeat to ensure we maximize entity count
         for i in range(self._max_gleanings):
             response = await self._model.achat(
@@ -168,6 +173,9 @@ class GraphExtractor:
                 history=response.history,
             )
             results += response.output.content or ""
+            input_tokens += response.metrics.usage.input_tokens
+            output_tokens += response.metrics.usage.output_tokens
+            total_tokens += response.metrics.usage.total_tokens
 
             # if this is the final glean, don't bother updating the continuation flag
             if i >= self._max_gleanings - 1:
@@ -180,9 +188,15 @@ class GraphExtractor:
                 model_parameters=self._loop_args,
             )
 
+            input_tokens += response.metrics.usage.input_tokens
+            output_tokens += response.metrics.usage.output_tokens
+            total_tokens += response.metrics.usage.total_tokens
+
             if response.output.content != "Y":
                 break
 
+        token_counter._update_token_count("graph_extractor", input_tokens, output_tokens, total_tokens)
+        log.info(f"LLMOutput Metrics: {response.metrics.usage}")
         return results
 
     async def _process_results(

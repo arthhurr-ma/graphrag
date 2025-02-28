@@ -6,18 +6,23 @@
 import logging
 from enum import Enum
 from typing import Any
+import tiktoken
 
 import numpy as np
 import pandas as pd
 
 from graphrag.cache.pipeline_cache import PipelineCache
+from graphrag.callbacks.token_counter import Token_Counter
 from graphrag.callbacks.workflow_callbacks import WorkflowCallbacks
 from graphrag.config.embeddings import create_collection_name
 from graphrag.index.operations.embed_text.strategies.typing import TextEmbeddingStrategy
 from graphrag.vector_stores.base import BaseVectorStore, VectorStoreDocument
 from graphrag.vector_stores.factory import VectorStoreFactory
+from graphrag.config.defaults import DEFAULT_EMBEDDING_MODEL
 
 log = logging.getLogger(__name__)
+
+token_counter = Token_Counter()
 
 # Per Azure OpenAI Limits
 # https://learn.microsoft.com/en-us/azure/ai-services/openai/reference
@@ -139,6 +144,10 @@ async def _text_embed_with_vector_store(
     strategy_exec = load_strategy(strategy_type)
     strategy_config = {**strategy}
 
+    # Get Model Name for Tokenization
+    llm_config = strategy_config.get("llm")
+    model_name = llm_config.get("model", DEFAULT_EMBEDDING_MODEL) if llm_config else DEFAULT_EMBEDDING_MODEL 
+    
     # if max_retries is not set, inject a dynamically assigned value based on the total number of expected LLM calls to be made
     if strategy_config.get("llm") and strategy_config["llm"]["max_retries"] == -1:
         strategy_config["llm"]["max_retries"] = len(input)
@@ -163,6 +172,34 @@ async def _text_embed_with_vector_store(
         msg = f"Column {id_column} not found in input dataframe with columns {input.columns}"
         raise ValueError(msg)
 
+
+        # --- Precise Token Counting with tiktoken ---
+    try:
+        encoding = tiktoken.encoding_for_model(model_name)
+    except KeyError:
+        log.warning(f"Model {model_name} not found by tiktoken.  Falling back to cl100k_base.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    total_input_tokens = 0
+    for text in input[embed_column]:
+        if isinstance(text, list):
+            for sub_text in text:
+                if not isinstance(sub_text, str):
+                    log.warning(f"Skipping non-string value in list: {sub_text}")
+                    continue #Or raise if you consider it incorrect
+                total_input_tokens += len(encoding.encode(sub_text)) #encode and count
+        else:
+            if not isinstance(text,str):
+                log.warning(f"Skipping non-string value : {text}")
+                continue #Or raise if you consider it incorrect
+            total_input_tokens += len(encoding.encode(text)) #encode and count
+
+    log.info(f"Total embedding process for model '{model_name}' used {total_input_tokens} tokens.")
+    token_counter._update_token_count("embed_text_extractor", total_input_tokens)
+    # --- END Precise Token Counting ---
+
+
+    
     total_rows = 0
     for row in input[embed_column]:
         if isinstance(row, list):

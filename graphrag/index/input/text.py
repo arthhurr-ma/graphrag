@@ -7,6 +7,7 @@ import logging
 import re
 from pathlib import Path
 from typing import Any
+import markdown
 
 import pandas as pd
 
@@ -16,7 +17,7 @@ from graphrag.logger.base import ProgressLogger
 from graphrag.storage.pipeline_storage import PipelineStorage
 
 DEFAULT_FILE_PATTERN = re.compile(
-    r".*[\\/](?P<source>[^\\/]+)[\\/](?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_(?P<author>[^_]+)_\d+\.txt"
+    r".*[\\/](?P<source>[^\\/]+)[\\/](?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_(?P<author>[^_]+)_\d+\.(txt|md)"
 )
 input_type = "text"
 log = logging.getLogger(__name__)
@@ -28,6 +29,9 @@ async def load(
     storage: PipelineStorage,
 ) -> pd.DataFrame:
     """Load text inputs from a directory."""
+    
+    log.debug(f"Loading text files from base_dir: {config.base_dir}")  
+    log.debug(f"Using file_pattern: {config.file_pattern}") 
 
     async def load_file(
         path: str, group: dict | None = None, _encoding: str = "utf-8"
@@ -35,6 +39,8 @@ async def load(
         if group is None:
             group = {}
         text = await storage.get(path, encoding="utf-8")
+        if file_extension == ".md": 
+            text = markdown.markdown(text) 
         new_item = {**group, "text": text}
         new_item["id"] = gen_sha512_hash(new_item, new_item.keys())
         new_item["title"] = str(Path(path).name)

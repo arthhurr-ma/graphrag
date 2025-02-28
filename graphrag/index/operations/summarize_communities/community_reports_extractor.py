@@ -11,11 +11,13 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from graphrag.index.typing import ErrorHandlerFn
+from graphrag.callbacks.token_counter import Token_Counter
 from graphrag.language_model.protocol.base import ChatModel
 from graphrag.prompts.index.community_report import COMMUNITY_REPORT_PROMPT
 
 log = logging.getLogger(__name__)
 
+token_counter = Token_Counter()
 
 class FindingModel(BaseModel):
     """A model for the expected LLM response shape."""
@@ -84,6 +86,15 @@ class CommunityReportsExtractor:
                 json_model=CommunityReportResponse,  # A model is required when using json mode
                 model_parameters={"max_tokens": self._max_report_length},
             )
+
+            input_tokens, output_tokens, total_tokens = 0, 0, 0
+
+            input_tokens += response.metrics.usage.input_tokens
+            output_tokens += response.metrics.usage.output_tokens
+            total_tokens += response.metrics.usage.total_tokens
+
+            token_counter._update_token_count("community_reports_extractor", input_tokens, output_tokens, total_tokens)
+            log.info(f"Return {total_tokens} tokens from community report extraction.")  
 
             output = response.parsed_response
         except Exception as e:

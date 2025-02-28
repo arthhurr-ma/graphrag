@@ -7,12 +7,16 @@ import asyncio
 import logging
 import sys
 import warnings
+from typing import Optional
+import csv
 from pathlib import Path
 
 import graphrag.api as api
 from graphrag.config.enums import CacheType, IndexingMethod
 from graphrag.config.load_config import load_config
-from graphrag.config.logging import enable_logging_with_config
+from graphrag.config.logging import enable_logging_with_config, enable_logging
+from graphrag.callbacks.token_counter import Token_Counter 
+from graphrag.index.utils.token_usage_to_csv import export_token_stats_to_csv
 from graphrag.index.validate_config import validate_config_names
 from graphrag.logger.base import ProgressLogger
 from graphrag.logger.factory import LoggerFactory, LoggerType
@@ -23,6 +27,8 @@ warnings.filterwarnings("ignore", message=".*NumbaDeprecationWarning.*")
 
 log = logging.getLogger(__name__)
 
+
+token_counter = Token_Counter()
 
 def _logger(logger: ProgressLogger):
     def info(msg: str, verbose: bool = False):
@@ -72,6 +78,9 @@ def index_cli(
     dry_run: bool,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,
+    index_method: str,
 ):
     """Run the pipeline with the given config."""
     cli_overrides = {}
@@ -80,6 +89,7 @@ def index_cli(
         cli_overrides["reporting.base_dir"] = str(output_dir)
         cli_overrides["update_index_output.base_dir"] = str(output_dir)
     config = load_config(root_dir, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="index", verbose=verbose)
 
     _run_index(
         config=config,
@@ -91,6 +101,9 @@ def index_cli(
         logger=logger,
         dry_run=dry_run,
         skip_validation=skip_validation,
+        logging_enabled=logging_enabled,  
+        log_path=log_path,
+        index_method="index",
     )
 
 
@@ -104,6 +117,9 @@ def update_cli(
     config_filepath: Path | None,
     skip_validation: bool,
     output_dir: Path | None,
+    logging_enabled: bool,  
+    log_path: str,
+    index_method: str,  
 ):
     """Run the pipeline with the given config."""
     cli_overrides = {}
@@ -113,6 +129,7 @@ def update_cli(
         cli_overrides["update_index_output.base_dir"] = str(output_dir)
 
     config = load_config(root_dir, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="update", verbose=verbose)
 
     _run_index(
         config=config,
@@ -124,6 +141,8 @@ def update_cli(
         logger=logger,
         dry_run=False,
         skip_validation=skip_validation,
+        log_path=log_path,
+        index_method="update",
     )
 
 
@@ -134,9 +153,12 @@ def _run_index(
     verbose,
     memprofile,
     cache,
-    logger,
+    logger: LoggerType,
     dry_run,
     skip_validation,
+    logging_enabled,
+    log_path,
+    index_method,
 ):
     progress_logger = LoggerFactory().create_logger(logger)
     info, error, success = _logger(progress_logger)
@@ -144,7 +166,7 @@ def _run_index(
     if not cache:
         config.cache.type = CacheType.none
 
-    enabled_logging, log_path = enable_logging_with_config(config, verbose)
+    enabled_logging, log_path = enable_logging_with_config(config, index_method=index_method, verbose=verbose)
     if enabled_logging:
         info(f"Logging enabled at {log_path}", True)
     else:
@@ -188,5 +210,11 @@ def _run_index(
         )
     else:
         success("All workflows completed successfully.", True)
+        token_counter.print_stats()
+        try:
+            export_token_stats_to_csv(token_counter, config.root_dir)
+        except Exception as e:
+            log.error(f"Error during export_token_stats_to_csv process: {e}")
+        raise 
 
     sys.exit(1 if encountered_errors else 0)
