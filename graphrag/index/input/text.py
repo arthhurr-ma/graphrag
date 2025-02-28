@@ -38,6 +38,7 @@ async def load(
     ) -> dict[str, Any]:
         if group is None:
             group = {}
+        file_extension = Path(path).suffix.lower()
         text = await storage.get(path, encoding="utf-8")
         if file_extension == ".md": 
             text = markdown.markdown(text) 

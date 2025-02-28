@@ -195,8 +195,13 @@ class GraphExtractor:
             if response.output.content != "Y":
                 break
 
+        log.info(
+            f"Community report extraction: Input tokens={input_tokens}, "
+            f"Output tokens={output_tokens}, Total tokens={total_tokens}"
+            )
+       
         token_counter._update_token_count("graph_extractor", input_tokens, output_tokens, total_tokens)
-        log.info(f"LLMOutput Metrics: {response.metrics.usage}")
+        
         return results
 
     async def _process_results(

@@ -93,8 +93,12 @@ class CommunityReportsExtractor:
             output_tokens += response.metrics.usage.output_tokens
             total_tokens += response.metrics.usage.total_tokens
 
+            log.info(
+            f"Community report extraction: Input tokens={input_tokens}, "
+            f"Output tokens={output_tokens}, Total tokens={total_tokens}"
+            )
+       
             token_counter._update_token_count("community_reports_extractor", input_tokens, output_tokens, total_tokens)
-            log.info(f"Return {total_tokens} tokens from community report extraction.")  
 
             output = response.parsed_response
         except Exception as e:

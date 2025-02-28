@@ -53,16 +53,16 @@ def export_token_stats_to_csv(token_counter, root_dir):
             writer = csv.writer(file)
             writer.writerow(headers)
             try:
-                documents = len(load_parquet_data(root_dir, 'create_final_documents.parquet'))
-                chunks = len(load_parquet_data(root_dir, 'create_final_text_units.parquet'))
-                relationships = len(load_parquet_data(root_dir, 'create_final_relationships.parquet'))
+                documents = load_parquet_data(root_dir, find_parquet_file(root_dir, 'documents.parquet'))
+                chunks = load_parquet_data(root_dir, find_parquet_file(root_dir, 'text_units.parquet'))
+                relationships = load_parquet_data(root_dir, find_parquet_file(root_dir, 'relationships.parquet'))
 
-                entities_df = load_parquet_data(root_dir, 'create_final_entities.parquet')
+                entities_df = load_parquet_data(root_dir, find_parquet_file(root_dir, 'entities.parquet'))
                 entities = entities_df.groupby("type").size().to_dict() if 'type' in entities_df.columns else {}
 
-                communities_df = load_parquet_data(root_dir, 'create_final_communities.parquet')
+                communities_df = load_parquet_data(root_dir, find_parquet_file(root_dir, 'communities.parquet'))
                 communities = communities_df.groupby("level").size().to_dict() if 'level' in communities_df.columns else {}
- 
+
 
                 stats = token_counter.get_token_counts()
                 chat_input_tokens = sum(stat["input_tokens"] for stat in stats.values())
@@ -94,3 +94,13 @@ def export_token_stats_to_csv(token_counter, root_dir):
     except Exception as e:
         log.error(f"Error during export process: {e}")
         raise
+
+def find_parquet_file(root_dir, file_name):
+    """New version of graphrag doesnt include 'create_final_' in parquet write."""
+    file_path = os.path.join(root_dir, file_name)
+    
+    if not os.path.exists(file_path):
+        file_name_with_prefix = f"create_final_{file_name}"
+        file_path = os.path.join(root_dir, file_name_with_prefix)
+    
+    return file_path
