@@ -196,7 +196,7 @@ class GraphExtractor:
                 break
 
         log.info(
-            f"Community report extraction: Input tokens={input_tokens}, "
+            f"Entity extraction: Input tokens={input_tokens}, "
             f"Output tokens={output_tokens}, Total tokens={total_tokens}"
             )
        
