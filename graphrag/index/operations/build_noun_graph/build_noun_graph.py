@@ -4,8 +4,8 @@
 """Graph extraction using NLP."""
 
 import math
-
 import pandas as pd
+import logging
 
 from graphrag.cache.noop_pipeline_cache import NoopPipelineCache
 from graphrag.cache.pipeline_cache import PipelineCache
@@ -16,6 +16,7 @@ from graphrag.index.operations.build_noun_graph.np_extractors.base import (
 from graphrag.index.run.derive_from_rows import derive_from_rows
 from graphrag.index.utils.hashing import gen_sha512_hash
 
+log = logging.getLogger(__name__)
 
 async def build_noun_graph(
     text_unit_df: pd.DataFrame,
@@ -25,6 +26,7 @@ async def build_noun_graph(
     cache: PipelineCache | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Build a noun graph from text units."""
+    log.info(f"Starting graph extraction using model: {getattr(text_analyzer, 'model_name', 'unknown')}")
     text_units = text_unit_df.loc[:, ["id", "text"]]
     nodes_df = await _extract_nodes(
         text_units, text_analyzer, num_threads=num_threads, cache=cache
@@ -71,6 +73,8 @@ async def _extract_nodes(
         columns={"noun_phrases": "title", "id": "text_unit_id"}
     ).drop_duplicates()
 
+    initial_node_count = len(noun_node_df)
+
     # group by title and count the number of text units
     grouped_node_df = (
         noun_node_df.groupby("title").agg({"text_unit_id": list}).reset_index()
@@ -78,6 +82,10 @@ async def _extract_nodes(
     grouped_node_df = grouped_node_df.rename(columns={"text_unit_id": "text_unit_ids"})
     grouped_node_df["frequency"] = grouped_node_df["text_unit_ids"].apply(len)
     grouped_node_df = grouped_node_df[["title", "frequency", "text_unit_ids"]]
+
+    grouped_node_count = len(grouped_node_df)
+    log.info(f"Grouped node count reduced from {initial_node_count} to after grouping {grouped_node_count}")
+
     return grouped_node_df.loc[:, ["title", "frequency", "text_unit_ids"]]
 
 
@@ -101,6 +109,8 @@ def _extract_edges(
         lambda x: _create_relationships(x)
     )
     edge_df = text_units_df.explode("edges").loc[:, ["edges", "text_unit_id"]]
+
+    initial_edge_count = len(edge_df)
 
     edge_df["source"] = edge_df["edges"].apply(
         lambda x: x[0] if isinstance(x, tuple) else None
@@ -132,6 +142,9 @@ def _extract_edges(
     grouped_edge_df = grouped_edge_df.loc[
         :, ["source", "target", "weight", "text_unit_ids"]
     ]
+    relationship_count = len(grouped_edge_df)
+    log.info(f"Relationship count reduced from {initial_edge_count} to after grouping {relationship_count}")
+
 
     if normalize_edge_weights:
         # use PMI weight instead of raw weight

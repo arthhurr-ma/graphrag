@@ -148,11 +148,11 @@ class SummarizeExtractor:
         total_tokens += response.metrics.usage.total_tokens
 
         log.info(
-            f"Community report extraction: Input tokens={input_tokens}, "
+            f"Summary description report extraction: Input tokens={input_tokens}, "
             f"Output tokens={output_tokens}, Total tokens={total_tokens}"
             )
        
-        token_counter._update_token_count("community_reports_extractor", input_tokens, output_tokens, total_tokens)
+        token_counter._update_token_count("description_summary_extractor", input_tokens, output_tokens, total_tokens)
 
 
         # Calculate result
