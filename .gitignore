@@ -41,6 +41,7 @@ ragtest/
 graphrag_moodys_v1.2.0/
 graphrag_large_scaling_exp/
 graphrag/extra_storage
+graphrag_moodys_v2.0.0/
 .pipelines
 .pipeline
 
