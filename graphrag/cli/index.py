@@ -141,6 +141,7 @@ def update_cli(
         logger=logger,
         dry_run=False,
         skip_validation=skip_validation,
+        logging_enabled=logging_enabled,  
         log_path=log_path,
         index_method="update",
     )

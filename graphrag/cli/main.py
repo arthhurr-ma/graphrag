@@ -271,6 +271,7 @@ def _update_cli(
         update_cli(
             root_dir=root,
             verbose=verbose,
+            method=method,
             memprofile=memprofile,
             cache=cache,
             logger=logger,

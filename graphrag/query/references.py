@@ -1,167 +1,178 @@
-import pandas as pd
 import re
-from typing import List, Set, Dict, Union
 
-# for future development need to deal with conversation history 
+import logging 
+import pandas as pd
+from typing import List, Set, Tuple, Optional
+import os
 
-# this needs to be gerneralizable for 4 functions below, should be able to retrieve text_unit_ids 
-def _extract_ids_from_table_string(table_string: str) -> List[str]:
-    """Extracts IDs from a pipe-delimited table string (first column)."""
-    ids = []
-    lines = table_string.strip().split('\n')
-    if len(lines) > 1:  
-        for line in lines[1:]:  
-            try:
-                unit_id, _ = line.split('|', 1)  
-                ids.append(unit_id)
-            except ValueError:
-                print(f"Warning: Could not parse line: {line}")
-                continue  
-    return ids
+# for future development need to deal with conversation history & maybe contextual references 
+
+logger = logging.getLogger(__name__)
 
 
+def text_unit_lookup(text_unit_ids: List[int], root_path: str) -> Set[str]:
+    """Returns a set of document titles based on a list of text unit IDs."""
+    documents_path = os.path.join(root_path, "output/documents.parquet")
+    logger.debug(f"Looking up text units in: {documents_path}")
+    try:
+        documents_df = pd.read_parquet(documents_path)
+        logger.debug(f"Loaded documents DataFrame with columns: {documents_df.columns.tolist()}")
 
-def text_unit_lookup(text_unit_ids: List[Union[str, int]], df_text_units: pd.DataFrame) -> Set[int]:
-    """Looks up text_unit_ids in the text units DataFrame and returns a set of matching text_unit_ids (as integers)."""
-    casted_ids = []    
-    for unit_id in text_unit_ids:
-        try:
-            casted_ids.append(int(unit_id))
-        except ValueError:
-            print(f"Warning: Invalid text_unit_id: {unit_id}. Skipping.")
-            continue 
+        document_titles = set()
+        
+        for _, row in documents_df.iterrows():
+            if any(text_unit_id in row['text_unit_ids'] for text_unit_id in text_unit_ids):
+                document_titles.add(row['title'])
 
-return set(df_text_units[df_text_units['text_unit_id'].isin(casted_ids)]['text_unit_id'].tolist())
-
-
-
-def entity_lookup(entity_ids: List[str], df_entities: pd.DataFrame) -> Set[int]:
-    """Looks up entity_ids in the entities DataFrame and returns a set of associated text_unit_ids (as integers)."""
-    text_unit_ids = set()
-    for entity_id in entity_ids:
-        matching_rows = df_entities[df_entities['short_id'] == entity_id] 
-        for _, row in matching_rows.iterrows():
-            text_unit_ids_str = row['text_unit_ids']
-            if pd.notna(text_unit_ids_str) and isinstance(text_unit_ids_str, str):
-                try: 
-                    ids = eval(text_unit_ids_str) # Safely evaluate string as list
-                    if isinstance(ids, list):
-                        text_unit_ids.update(int(i) for i in ids) # Ensure int
-                except (SyntaxError, NameError, TypeError):
-                    print(f"Warning: Could not parse text_unit_ids for entity {entity_id}: {text_unit_ids_str}")
-                    # Skip the entity if we can not parse text_unit_ids    return text_unit_ids
+        if not document_titles:
+            logger.info(f"No document titles found for text_unit_ids: {text_unit_ids}")
+        
+        logger.info(f"Found document titles for text_unit_ids {text_unit_ids}: {document_titles}")
+        return document_titles
+    except FileNotFoundError:
+        logger.error(f"Error: File not found at {documents_path}")    
+        return set()
+    except Exception as e:
+        logger.exception(f"An error occurred in text_unit_lookup: {e}")  
+        return set()
 
 
-def relationship_lookup(relationship_ids: List[str], df_relationships: pd.DataFrame) -> Set[int]:
-    """Looks up relationship_ids in the relationships DataFrame, finds associated entities,
-       and returns a set of text_unit_ids (from those entities).
-    """
-    text_unit_ids = set()
-    for rel_id in relationship_ids:
-        matching_rows = df_relationships[df_relationships['short_id'] == rel_id]  # Assuming 'short_id'
-        for _, row in matching_rows.iterrows():
-            #get the entities attached to this rel
-            source = row["source"]
-            target = row["target"]
-
-
-        #now look up these source and target entities in the entity dataframe to extact the text units
-        matching_entities = df_entities[(df_entities['title'] == source) | (df_entities['title'] == target)]
-        for _, entity_row in matching_entities.iterrows():
-             # Handle cases where text_unit_ids might be a string representation of a list or nan
-            text_unit_ids_str = entity_row['text_unit_ids']
-            if pd.notna(text_unit_ids_str) and isinstance(text_unit_ids_str, str):
-                try:
-                    ids = eval(text_unit_ids_str)
-                    if isinstance(ids, list):                            
-                    text_unit_ids.update(int(i) for i in ids)  # Ensure int, add to set
-                except (SyntaxError, NameError, TypeError):
-                    print(f"Warning: Could not parse text_unit_ids for relationship {rel_id}, entity: {entity_row['title']}")
-
-return text_unit_ids
+def entity_lookup(entity_indexes: List[int], root_path: str) -> List[Tuple[str, str, str, List[int]]]:
+    """Looks up entity details and returns a list of tuples (title, description, text_unit_ids)."""
+    entities_path = os.path.join(root_path, "output/entities.parquet")
+    logger.debug(f"Looking up entities in: {entities_path}")
+    try:
+        entities_df = pd.read_parquet(entities_path)
+        results = []
+        for idx in entity_indexes:
+            if 0 <= idx < len(entities_df):
+                row = entities_df.iloc[idx]
+                results.append(("entity", row["title"], row["description"], row["text_unit_ids"]))
+        logger.info(f"Found {len(results)} entities by index: {entity_indexes}")
+        return results
+    except FileNotFoundError:
+        logger.error(f"Error: File not found at {entities_path}")
+        return []
+    except Exception as e:
+        logger.exception(f"An error occurred in entity_lookup: {e}")
+        return []
 
 
 
-def community_report_lookup(community_report_ids: List[str], df_community_reports: pd.DataFrame) -> Set[int]:
-    """Looks up community_report_ids in the community reports DataFrame, finds associated entities,
-       and returns a set of text_unit_ids (from those entities).
-    """
-    text_unit_ids = set()
-    for comm_id in community_report_ids:
-        matching_rows = df_community_reports[df_community_reports['short_id'] == comm_id] # Assuming short_id
-        for _, row in matching_rows.iterrows():
-            #get the entities attached to this community
-            title = row["title"]
-
-
-        #find matching entities in entities dataframe
-        matching_entities = df_entities[(df_entities['title'] == title)]
-        for _, entity_row in matching_entities.iterrows():
-            # Handle cases where text_unit_ids might be a string representation of a list
-            text_unit_ids_str = entity_row['text_unit_ids']
-            if pd.notna(text_unit_ids_str) and isinstance(text_unit_ids_str, str):
-                try:
-                    ids = eval(text_unit_ids_str)
-                    if isinstance(ids, list):
-                        text_unit_ids.update(int(i) for i in
-
- ids)  # Ensure int
-                    except (SyntaxError, NameError, TypeError):
-                        print(f"Warning: Could not parse text_unit_ids for community {comm_id}, entity: {entity_row['title']}")
-    return text_unit_ids
+def relationship_lookup(relationship_indexes: List[int], root_path: str) -> List[Tuple[str, str, str, List[int]]]:
+    """Looks up relationship details and returns a list of tuples (None, description, text_unit_ids)."""
+    relationships_path = os.path.join(root_path, "output/relationships.parquet")
+    logger.debug(f"Looking up relationships in: {relationships_path}")
+    try:
+        relationships_df = pd.read_parquet(relationships_path)
+        results = []
+        for idx in relationship_indexes:
+            if 0 <= idx < len(relationships_df):
+                row = relationships_df.iloc[idx]
+                results.append(("relationship", None, row["description"], row["text_unit_ids"]))
+        logger.info(f"Found {len(results)} relationships by index: {relationship_indexes}")
+        return results
+    except FileNotFoundError:
+        logger.error(f"Error: File not found at {relationships_path}")
+        return []
+    except Exception as e:
+        logger.exception(f"An error occurred in relationship_lookup: {e}")
+        return []
 
 
 
+def community_report_lookup(community_report_indexes: List[int], root_path: str) -> List[Tuple[str, str, str, List[int]]]:
+    """Looks up community report details and returns a list of tuples (title, summary, text_unit_ids)."""
+    community_reports_path = os.path.join(root_path, "output/community_reports.parquet")
+    communities_path = os.path.join(root_path, "output/communities.parquet")
+    logger.debug(f"Looking up community reports in: {community_reports_path}")
+    try:
+        community_reports_df = pd.read_parquet(community_reports_path)
+        communities_df = pd.read_parquet(communities_path)
+        results = []
+        for idx in community_report_indexes:
+            # Ensure we're looking up by index
+            if 0 <= idx < len(community_reports_df):
+                row = community_reports_df.iloc[idx]
+                report_id = row["community"]
+                title = row["title"]
+                summary = row["summary"]
 
-def retrieve_reference_ids(method: str, context_data: 'ContextBuilderResult',
-                           df_entities: pd.DataFrame, df_relationships: pd.DataFrame,
-                           df_community_reports: pd.DataFrame, df_text_units: pd.DataFrame) -> Set[int]:
-    """Retrieves all relevant text_unit_ids based on the context building method."""
+                community_row = communities_df[communities_df["community"] == report_id]
 
+                if not community_row.empty:
+                    text_unit_ids = community_row.iloc[0]["text_unit_ids"]
+                else:
+                    logger.warning(f"No matching community found for report ID {report_id}.")
+                    text_unit_ids = []
 
-all_text_unit_ids: Set[int] = set()
+                results.append(("community_report", title, summary, text_unit_ids))
 
-if method == "basic":
-    context_string = context_data.context_chunks
-    text_unit_ids = _extract_ids_from_table_string(context_string)
-    all_text_unit_ids.update(text_unit_lookup(text_unit_ids, df_text_units))
-
-elif method == "local":
-    context_records = context_data.context_records
-
-    # --- Entities ---
-    if 'entities' in context_records and not context_records['entities'].empty:
-        entity_ids = _extract_ids_from_table_string(context_data.context_chunks.split("-----Entities-----")[1].split("-----")[0])
-        all_text_unit_ids.update(entity_lookup(entity_ids, df_entities))
-
-    # --- Relationships ---
-    if 'relationships' in context_records and not context_records['relationships'].empty :
-        relationship_ids = _extract_ids_from_table_string(context_data.context_chunks.split("-----Relationships-----")[1].split("-----")[0])
-        all_text_unit_ids.update(relationship_lookup(relationship_ids, df_relationships))
-
-    # --- Community Reports ---
-    if 'reports' in context_records and not context_records['reports'].empty:
-        community_ids = _extract_ids_from_table_string(context_data.context_chunks.split("-----Reports-----")[1].split("-----")[0])
-        all_text_unit_ids.update(community_report_lookup(community_ids, df_community_reports))
-    # --- Text Units ---
-    if 'sources' in context_records and not context_records['sources'].empty:
-        text_unit_ids = _extract_ids_from_table_string(context_data.context_chunks.split("-----Sources-----")[1].split("-----")[0])
-        all_text_unit_ids.update(text_unit_lookup(text_unit_ids, df_text_units))
-
-
-else:
-    raise ValueError(f"Unsupported method: {method}")
-
-return all_text_unit_ids
+        logger.info(f"Found {len(results)} community reports by index: {community_report_indexes}")
+        return results
+    except FileNotFoundError:
+        logger.error(f"Error: File not found at {community_reports_path}")
+        return []
+    except Exception as e:
+        logger.exception(f"An error occurred in community_report_lookup: {e}")
 
 
+def in_text_references(query: str, root_path: str) -> Optional[pd.DataFrame]:
+    """Extracts references from the query and returns a DataFrame."""
+    logger.info(f"Extracting in-text references from query: {query}")
+    references: List[Tuple[str, Optional[str], str, List[int]]] = []
 
 
+    reference_pattern = r"\[Data:\s*(\w+)\s*\((\d+)\)\]"
+    matches = re.findall(reference_pattern, query)
 
+    logger.info(f"Found {len(matches)} references in the query: {matches}")
 
-def in_text_references():
+    for match in matches:
+        ref_type, index_str = match
+        index = int(index_str)
+
+        logger.debug(f"Processing reference type: {ref_type}, index: {index}")
+
+        if ref_type == "Entities":
+            references.extend(entity_lookup([index], root_path))
+        elif ref_type == "Relationships":
+            references.extend(relationship_lookup([index], root_path))
+        elif ref_type == "Reports":
+            references.extend(community_report_lookup([index], root_path))
+        else:
+            logger.warning(f"Unrecognized reference type: {ref_type}. Skipping.")
+
+    # Create DataFrame
+    if not matches:
+        logger.info("No references found in the query.")
+        return None
     
-    #pass in the context data
-    #perform lookups to get references to the context data
+    df = pd.DataFrame(columns=["type of reference", "title", "description", "document_title"])
+    all_text_unit_ids: List[int] = []
+
+    for ref_type, title, description, text_unit_ids in references:
+        all_text_unit_ids.extend(text_unit_ids)
+        logger.debug(f"Looking up document titles for text_unit_ids: {text_unit_ids}")
+        document_titles = text_unit_lookup(text_unit_ids, root_path) 
+        logger.info(f"Found document titles: {document_titles} for reference {title}")
     
-    pass    
+        for doc_title in document_titles:
+            new_row = pd.DataFrame([{
+                "type of reference": ref_type,
+                "title": title,
+                "description": description,
+                "document_title": doc_title,
+            }])
+            
+            df = pd.concat([df, new_row], ignore_index=True)
+
+    df.drop_duplicates(inplace=True)
+    output_path = os.path.join(root_path, "output/references/in_text_citations.csv")
+    if not df.empty:
+        df.to_csv(output_path, index=False)
+        logger.info(f"References successfully written to {output_path}")
+    else:
+        logger.info("No references found, no CSV written.")
+
+    return df

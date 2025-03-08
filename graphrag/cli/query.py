@@ -7,10 +7,13 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+import logging
 
 import graphrag.api as api
 from graphrag.callbacks.noop_query_callbacks import NoopQueryCallbacks
+from graphrag.query.references import in_text_references
 from graphrag.config.load_config import load_config
+from graphrag.config.logging import enable_logging_with_config, enable_logging
 from graphrag.config.models.graph_rag_config import GraphRagConfig
 from graphrag.logger.print_progress import PrintProgressLogger
 from graphrag.storage.factory import StorageFactory
@@ -20,6 +23,8 @@ if TYPE_CHECKING:
     import pandas as pd
 
 logger = PrintProgressLogger("")
+
+log = logging.getLogger(__name__)
 
 
 def run_global_search(
@@ -31,6 +36,7 @@ def run_global_search(
     response_type: str,
     streaming: bool,
     query: str,
+    verbose: bool = False,
 ):
     """Perform a global search with a given query.
 
@@ -41,6 +47,7 @@ def run_global_search(
     if data_dir:
         cli_overrides["output.base_dir"] = str(data_dir)
     config = load_config(root, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="query", verbose=verbose)
 
     dataframe_dict = _resolve_output_files(
         config=config,
@@ -134,6 +141,13 @@ def run_global_search(
     logger.success(f"Global Search Response:\n{response}")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
+
+    df = in_text_references(response, str(root))
+    if not df.empty:
+        logger.success("In-text references found successfully.")
+    else:
+        logger.error("No in-text references found.")
+
     return response, context_data
 
 
@@ -145,6 +159,7 @@ def run_local_search(
     response_type: str,
     streaming: bool,
     query: str,
+    verbose: bool = False
 ):
     """Perform a local search with a given query.
 
@@ -155,6 +170,7 @@ def run_local_search(
     if data_dir:
         cli_overrides["output.base_dir"] = str(data_dir)
     config = load_config(root, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="query", verbose=verbose)
 
     dataframe_dict = _resolve_output_files(
         config=config,
@@ -268,6 +284,14 @@ def run_local_search(
     logger.success(f"Local Search Response:\n{response}")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
+
+
+    df = in_text_references(response, str(root))
+    if not df.empty:
+        logger.success("In-text references found successfully.")
+    else:
+        logger.error("No in-text references found.") 
+   
     return response, context_data
 
 
@@ -279,6 +303,7 @@ def run_drift_search(
     response_type: str,
     streaming: bool,
     query: str,
+    verbose: bool = False
 ):
     """Perform a local search with a given query.
 
@@ -289,6 +314,7 @@ def run_drift_search(
     if data_dir:
         cli_overrides["output.base_dir"] = str(data_dir)
     config = load_config(root, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="query", verbose=verbose)
 
     dataframe_dict = _resolve_output_files(
         config=config,
@@ -391,6 +417,14 @@ def run_drift_search(
     logger.success(f"DRIFT Search Response:\n{response}")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
+
+
+    df = in_text_references(response, str(root))
+    if not df.empty:
+        logger.success("In-text references found successfully.")
+    else:
+        logger.error("No in-text references found.")
+
     return response, context_data
 
 
@@ -400,6 +434,7 @@ def run_basic_search(
     root_dir: Path,
     streaming: bool,
     query: str,
+    verbose: bool = False
 ):
     """Perform a basics search with a given query.
 
@@ -410,6 +445,7 @@ def run_basic_search(
     if data_dir:
         cli_overrides["output.base_dir"] = str(data_dir)
     config = load_config(root, config_filepath, cli_overrides)
+    logging_enabled, log_path = enable_logging_with_config(config, index_method="query", verbose=verbose)
 
     dataframe_dict = _resolve_output_files(
         config=config,
@@ -480,6 +516,14 @@ def run_basic_search(
     logger.success(f"Basic Search Response:\n{response}")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
+
+    df = in_text_references(response, str(root))
+    if not df.empty:
+        logger.success("In-text references found successfully.")
+    else:
+        logger.error("No in-text references found.")
+    
+
     return response, context_data
 
 
