@@ -80,7 +80,7 @@ def index_cli(
     output_dir: Path | None,
     logging_enabled: bool,  
     log_path: str,
-    index_method: str,
+    command_method: str,
 ):
     """Run the pipeline with the given config."""
     cli_overrides = {}
@@ -89,7 +89,7 @@ def index_cli(
         cli_overrides["reporting.base_dir"] = str(output_dir)
         cli_overrides["update_index_output.base_dir"] = str(output_dir)
     config = load_config(root_dir, config_filepath, cli_overrides)
-    logging_enabled, log_path = enable_logging_with_config(config, index_method="index", verbose=verbose)
+    logging_enabled, log_path = enable_logging_with_config(config, command_method="index", verbose=verbose)
 
     _run_index(
         config=config,
@@ -103,7 +103,7 @@ def index_cli(
         skip_validation=skip_validation,
         logging_enabled=logging_enabled,  
         log_path=log_path,
-        index_method="index",
+        command_method="index",
     )
 
 
@@ -119,7 +119,7 @@ def update_cli(
     output_dir: Path | None,
     logging_enabled: bool,  
     log_path: str,
-    index_method: str,  
+    command_method: str,  
 ):
     """Run the pipeline with the given config."""
     cli_overrides = {}
@@ -129,7 +129,7 @@ def update_cli(
         cli_overrides["update_index_output.base_dir"] = str(output_dir)
 
     config = load_config(root_dir, config_filepath, cli_overrides)
-    logging_enabled, log_path = enable_logging_with_config(config, index_method="update", verbose=verbose)
+    logging_enabled, log_path = enable_logging_with_config(config, command_method="update", verbose=verbose)
 
     _run_index(
         config=config,
@@ -143,7 +143,7 @@ def update_cli(
         skip_validation=skip_validation,
         logging_enabled=logging_enabled,  
         log_path=log_path,
-        index_method="update",
+        command_method="update",
     )
 
 
@@ -159,7 +159,7 @@ def _run_index(
     skip_validation,
     logging_enabled,
     log_path,
-    index_method,
+    command_method,
 ):
     progress_logger = LoggerFactory().create_logger(logger)
     info, error, success = _logger(progress_logger)
@@ -167,7 +167,7 @@ def _run_index(
     if not cache:
         config.cache.type = CacheType.none
 
-    enabled_logging, log_path = enable_logging_with_config(config, index_method=index_method, verbose=verbose)
+    enabled_logging, log_path = enable_logging_with_config(config, command_method=command_method, verbose=verbose)
     if enabled_logging:
         info(f"Logging enabled at {log_path}", True)
     else:

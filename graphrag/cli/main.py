@@ -176,7 +176,7 @@ def _index_cli(
     actual_logger = LoggerFactory().create_logger(logger)
     actual_logger.info(f"Successfully loaded config from {config}")
     actual_logger.info(f"Executing index for project at {root}")
-    logging_enabled, log_path = enable_logging_with_config(config_data, index_method="index", verbose=verbose)
+    logging_enabled, log_path = enable_logging_with_config(config_data, command_method="index", verbose=verbose)
     
     if logging_enabled:
         actual_logger.info(f"Logging enabled for index. Logs will be written to: {log_path}")
@@ -195,7 +195,7 @@ def _index_cli(
             method=method,
             log_path=log_path, 
             logging_enabled=logging_enabled,
-            index_method="index",
+            command_method="index",
         )
         actual_logger.success("Index execution completed successfully.")
 
@@ -261,7 +261,7 @@ def _update_cli(
     actual_logger = LoggerFactory().create_logger(logger)
     actual_logger.info(f"Successfully loaded config from {config}")
     actual_logger.info(f"Executing update for project at {root}")
-    logging_enabled, log_path = enable_logging_with_config(config_data, index_method="update", verbose=verbose)
+    logging_enabled, log_path = enable_logging_with_config(config_data, command_method="update", verbose=verbose)
 
     if logging_enabled:
         actual_logger.info(f"Logging enabled for update. Logs will be written to: {log_path}")
@@ -280,7 +280,7 @@ def _update_cli(
             output_dir=output,
             logging_enabled=logging_enabled,
             log_path=log_path,
-            index_method="update",
+            command_method="update",
         )
         actual_logger.success("Update execution completed successfully.")
 
