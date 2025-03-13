@@ -1,0 +1,189 @@
+Symbol,Name,org_name,10K,10Q_count,ratings_reports_count,earnings_call,old_earnings_call_count,old_ratings_reports
+AAPL,Apple,Apple Inc.,True,3,2,False,4,True
+NVDA,NVIDIA,NVIDIA Corporation,True,3,2,False,4,True
+MSFT,Microsoft,Microsoft Corporation,True,3,1,False,4,True
+GOOGL,Alphabet (Google),False,True,3,0,False,0,False
+AMZN,Amazon,"Amazon.com, Inc.",True,3,2,False,4,True
+META,Meta Platforms (Facebook),"Meta Platforms, Inc.",True,3,3,False,0,True
+TSLA,Tesla,"Tesla, Inc.",True,3,1,False,4,True
+AVGO,Broadcom,Broadcom Inc.,True,4,4,True,4,True
+BRK-A,Berkshire Hathaway,False,True,3,0,False,0,True
+WMT,Walmart,Walmart Inc.,True,3,1,True,4,True
+JPM,JPMorgan Chase,False,True,3,0,False,5,True
+LLY,Eli Lilly,Eli Lilly and Company,True,3,6,False,4,True
+V,Visa inc,False,True,3,0,False,0,True
+XOM,Exxon Mobil,Exxon Mobil Corporation,True,3,2,False,4,True
+MA,Mastercard,False,True,3,0,False,4,False
+UNH,UnitedHealth,False,True,3,0,False,0,False
+ORCL,Oracle,Oracle Corporation,True,4,4,False,4,True
+COST,Costco,Costco Wholesale Corporation,True,3,1,False,0,True
+HD,Home Depot,"Home Depot, Inc. (The)",True,3,3,False,4,False
+PG,Procter & Gamble,False,True,3,0,False,5,False
+NFLX,Netflix,"Netflix, Inc.",True,3,4,True,5,True
+BAC,Bank of America,False,True,3,0,False,5,False
+JNJ,Johnson & Johnson,Johnson & Johnson,True,3,6,False,5,True
+CRM,Salesforce,"Salesforce, Inc.",True,3,2,True,4,True
+ABBV,AbbVie,AbbVie Inc.,True,3,4,False,4,True
+CVX,Chevron,Chevron Corporation,True,3,1,False,4,True
+KO,Coca-Cola,Coca-Cola Company (The),True,3,3,False,4,False
+TMUS,T-Mobile US,"T-Mobile US, Inc.",True,3,0,False,4,False
+WFC,Wells Fargo,False,True,3,0,False,0,False
+MRK,Merck,"Merck & Co., Inc.",True,3,3,False,4,True
+CSCO,Cisco,"Cisco Systems, Inc.",True,3,3,False,4,True
+MS,Morgan Stanley,False,True,3,0,False,4,True
+AXP,American Express,False,True,3,0,False,4,True
+TMO,Thermo Fisher Scientific,Thermo Fisher Scientific Inc.,True,3,4,True,4,False
+IBM,IBM,International Business Machines Corporation,True,3,3,False,4,True
+PEP,Pepsico,"PepsiCo, Inc.",True,3,5,False,5,True
+MCD,McDonald,McDonald's Corporation,True,3,1,False,2,True
+GE,General Electric,General Electric Company,True,3,4,False,2,True
+AMD,"ADVANCED MICRO DEVICES, INC.","Advanced Micro Devices, Inc.",True,3,2,False,4,True
+ABT,Abbott Laboratories,Abbott Laboratories,True,3,2,False,5,True
+GS,Goldman Sachs,False,True,3,0,False,0,False
+DIS,Walt Disney,Walt Disney Company (The),True,3,2,False,4,False
+PM,Philip Morris International Inc.,Philip Morris International Inc.,True,3,1,True,4,True
+ADBE,Adobe,Adobe Inc.,True,3,3,True,4,True
+CAT,Caterpillar,Caterpillar Inc.,True,3,2,True,4,True
+QCOM,QUALCOMM,QUALCOMM Incorporated,True,3,2,True,4,True
+TXN,Texas Instruments,"Texas Instruments, Incorporated",True,3,2,True,4,True
+DHR,Danaher,Danaher Corporation,True,3,2,False,4,True
+INTU,Intuit,Intuit Inc.,True,3,4,False,4,True
+VZ,VERIZON COMMUNICATIONS INC.,Verizon Communications Inc.,True,3,4,False,4,True
+BKNG,Booking Holdings (Booking.com),Booking Holdings Inc.,True,3,4,False,0,True
+RTX,RTX,RTX Corporation,True,3,1,False,3,True
+T,AT&T inc,AT&T Inc.,True,3,2,False,0,True
+BLK,BlackRock,False,True,1,0,False,5,False
+C,Citigroup,False,True,3,0,False,5,False
+PFE,Pfizer,Pfizer Inc.,True,3,1,False,3,True
+LOW,Lowes,"Lowe's Companies, Inc.",True,3,2,False,4,True
+AMGN,Amgen,Amgen Inc.,True,3,3,True,4,True
+NEE,Nextera Energy,"NextEra Energy, Inc.",True,3,2,False,4,False
+HON,Honeywell,Honeywell International Inc.,True,3,5,True,4,True
+UNP,Union Pacific Corp,Union Pacific Corporation,True,3,1,False,4,True
+CMCSA,Comcast,Comcast Corporation,True,3,2,False,4,False
+SCHW,Charles Schwab,False,True,3,0,False,2,False
+COP,ConocoPhillips,ConocoPhillips,True,3,3,False,4,True
+BA,Boeing,Boeing Company (The),True,3,7,False,4,False
+DE,Deere,Deere & Company,True,3,3,False,3,True
+LMT,Lockheed Martin,Lockheed Martin Corporation,True,3,1,False,4,True
+GILD,Gilead Sciences,"Gilead Sciences, Inc.",True,3,3,True,4,True
+BMY,Bristol-Myers Squibb,Bristol-Myers Squibb Company,True,3,4,False,4,True
+UPS,United Parcel Service,"United Parcel Service, Inc.",True,3,2,True,4,False
+SBUX,Starbucks,Starbucks Corporation,True,3,3,False,4,True
+NKE,Nike,"NIKE, Inc.",True,3,4,False,4,True
+INTC,Intel,Intel Corporation,True,3,4,False,4,True
+PYPL,PayPal,False,True,3,0,False,4,False
+SO,SOUTHERN CO,Southern Company (The),True,3,2,False,4,False
+AMT,American Tower,False,True,3,0,False,4,False
+MO,Altria Group,Altria Group Inc.,True,3,3,True,12,True
+DUK,Duke Energy,Duke Energy Corporation,True,3,1,False,4,True
+MDLZ,Mondelez,"Mondelez International, Inc.",True,3,4,True,4,False
+MMM,3M,3M Company,True,3,3,False,4,True
+USB,U.S. Bancorp,False,True,3,0,False,5,True
+GD,General Dynamics,General Dynamics Corporation,True,3,2,False,4,True
+COF,Capital One,False,True,3,0,False,0,False
+CL,Colgate-Palmolive,Colgate-Palmolive Company,True,3,3,False,4,True
+EMR,Emerson,False,True,3,0,False,0,False
+FDX,FedEx,FedEx Corporation,True,3,1,False,4,False
+CVS,CVS Health,CVS Health,True,3,6,False,4,False
+SPG,Simon Property Group,"Simon Property Group, Inc.",True,3,0,True,4,False
+TGT,Target,Target Corporation,True,3,1,False,3,False
+MET,MetLife,"MetLife, Inc.",True,3,2,False,4,True
+GM,General Motors,General Motors Company,True,3,2,False,3,True
+NOW,ServiceNow,"ServiceNow, Inc.",True,3,2,True,0,False
+ISRG,Intuitive Surgical,"Intuitive Surgical, Inc.",True,3,0,True,0,False
+PLTR,Palantir,Palantir Technologies Inc.,True,3,0,True,0,False
+AMAT,Applied Materials,"Applied Materials, Inc.",True,3,2,True,0,False
+SPGI,S&P Global,Smith & Nephew plc,True,3,3,False,0,False
+ANET,Arista Networks,"Arista Networks, Inc.",True,3,0,True,0,False
+SYK,Stryker Corporation,Stryker Corporation,True,3,5,False,0,False
+BSX,Boston Scientific,Boston Scientific Corporation,True,3,6,False,0,False
+KKR,KKR & Co.,False,True,3,0,False,0,False
+PGR,Progressive,False,True,3,0,False,0,False
+UBER,Uber,"Uber Technologies, Inc.",True,3,4,False,0,False
+TJX,TJX Companies,"TJX Companies, Inc. (The)",True,3,1,False,0,False
+BX,Blackstone Group,False,True,3,0,False,0,False
+ADP,Automatic Data Processing,"Automatic Data Processing, Inc.",True,3,4,True,0,False
+FI,Fiserv,"Fiserv, Inc.",True,3,1,True,0,False
+MU,Micron Technology,"Micron Technology, Inc.",True,3,4,True,0,False
+PANW,Palo Alto Networks,"Palo Alto Networks, Inc.",True,3,0,False,0,False
+APP,AppLovin,AppLovin Corporation,True,3,7,False,0,False
+GEV,GE Vernova,False,True,3,0,False,0,False
+ADI,Analog Devices,"Analog Devices, Inc.",True,3,2,True,0,False
+VRTX,Vertex Pharmaceuticals,Vertex Pharmaceuticals Incorporated,True,3,0,False,0,False
+MRVL,Marvell Technology Group,False,True,3,0,False,0,False
+MMC,Marsh & McLennan Companies,"Marsh & McLennan Companies, Inc.",True,3,1,False,0,False
+LRCX,Lam Research,Lam Research Corp.,True,3,0,False,0,False
+PLD,Prologis,"Prologis, L.P.",True,3,3,False,0,False
+KLAC,KLA,KLA Corporation,True,3,1,False,0,False
+CEG,Constellation Energy,Constellation Energy Corporation,True,3,0,False,0,False
+MSTR,MicroStrategy,MicroStrategy Incorporated,True,3,1,False,0,False
+APO,Apollo Global Management,False,True,3,0,False,0,False
+ELV,Elevance Health,"Elevance Health, Inc.",True,3,2,True,0,False
+SHW,Sherwin-Williams,Sherwin-Williams Company (The),True,3,2,False,0,False
+EQIX,Equinix,"Equinix, Inc.",True,3,2,True,0,False
+CRWD,CrowdStrike,False,True,3,0,False,0,False
+MCO,Moody's,Moody's Corporation,True,3,0,False,3,False
+PH,Parker-Hannifin,Parker-Hannifin Corporation,True,3,4,False,0,False
+ICE,Intercontinental Exchange,"Intercontinental Exchange, Inc.",True,3,3,True,0,False
+WM,Waste Management,"Waste Management, Inc.",True,3,4,True,0,False
+ABNB,Airbnb,"Airbnb, Inc.",True,3,0,True,0,False
+CME,CME Group,False,True,3,0,False,0,False
+CDNS,Cadence Design Systems,"Cadence Design Systems, Inc.",True,3,2,True,0,False
+APH,Amphenol,Amphenol Corporation,True,3,1,False,0,False
+SNPS,Synopsys,"Synopsys, Inc.",True,3,2,True,0,False
+WELL,Welltower,Welltower OP LLC,True,3,3,True,0,False
+IBKR,Interactive Brokers,False,True,3,0,False,0,False
+CTAS,Cintas,Cintas Corporation,True,3,0,False,0,False
+CI,Cigna,False,True,3,0,False,0,False
+HCA,HCA Healthcare,"HCA Healthcare, Inc.",True,3,0,False,0,False
+PNC,PNC Financial Services,False,True,3,0,False,0,False
+CMG,Chipotle Mexican Grill,"Chipotle Mexican Grill, Inc.",True,3,0,True,0,False
+MSI,Motorola Solutions,"Motorola Solutions, Inc.",True,3,1,True,4,False
+SCCO,Southern Copper,Southern Copper Corporation,True,3,3,False,0,False
+MAR,Marriott International,"Marriott International, Inc.",True,3,2,True,0,False
+EOG,EOG Resources,"EOG Resources, Inc.",True,3,1,False,0,False
+DELL,Dell,Dell Technologies Inc.,True,3,0,False,0,False
+ITW,Illinois Tool Works,Illinois Tool Works Inc.,True,3,1,True,0,False
+TDG,TransDigm,False,True,3,0,False,0,False
+MCK,McKesson,McKesson Corporation,True,3,3,False,0,False
+REGN,Regeneron Pharmaceuticals,"Regeneron Pharmaceuticals, Inc.",True,3,3,True,0,False
+ZTS,Zoetis,Zoetis Inc.,True,3,4,True,0,False
+COIN,Coinbase,"Coinbase Global, Inc.",True,3,3,False,0,False
+AJG,Arthur J. Gallagher & Co.,Arthur J. Gallagher & Co.,True,3,1,False,0,False
+EPD,ENTERPRISE PRODUCTS PARTNERS ,False,True,3,0,False,0,False
+DASH,DoorDash,"Doordash, Inc.",True,3,0,False,0,False
+FTNT,Fortinet,"Fortinet, Inc.",True,3,2,True,0,False
+WMB,Williams Companies,Sherwin-Williams Company (The),True,3,2,False,0,False
+APD,Air Products and Chemicals,"Air Products and Chemicals, Inc.",True,3,4,True,0,False
+NOC,Northrop Grumman,Northrop Grumman Corporation,True,3,2,False,0,False
+ORLY,O'Reilly Automotive,False,True,3,0,False,3,False
+ET,Energy Transfer Partners,"Energy Transfer Operating, L.P.",True,3,0,False,0,False
+BDX,Becton Dickinson,"Becton, Dickinson and Company",True,3,4,False,0,False
+KMI,Kinder Morgan,"Kinder Morgan Energy Partners, L.P.",True,3,0,False,4,False
+ECL,Ecolab,Ecolab Inc.,True,3,3,True,0,False
+RSG,Republic Services,"Republic Services, Inc.",True,3,2,True,0,False
+WDAY,Workday,"Workday, Inc.",True,3,2,False,0,False
+RCL,Royal Caribbean,False,True,3,0,False,0,False
+OKE,Oneok,"ONEOK, Inc.",True,3,3,False,0,False
+TFC,Truist Financial,False,True,3,0,False,0,False
+CSX,CSX Corporation,CSX Corporation,True,3,1,False,0,False
+ADSK,Autodesk,False,True,3,0,False,0,False
+CARR,Carrier,Carrier Global Corporation,True,3,3,False,0,False
+FMCCT,Freddie Mac,False,True,3,0,False,0,False
+SLB,Schlumberger,False,True,3,0,False,0,False
+TTD,The Trade Desk,"THE Trade Desk, Inc.",True,3,0,False,0,False
+DLR,Digital Realty,"Digital Realty Trust, Inc.",True,3,0,False,0,False
+HLT,Hilton Worldwide,Hilton Worldwide Holdings Inc.,True,3,0,True,0,False
+ARES,Ares Management,Ares Management Corporation,True,3,0,False,0,False
+BK,Bank of New York Mellon Corp,False,True,3,0,False,5,True
+AFL,Aflac,False,True,3,0,False,0,False
+VST,Vistra,Vistra  Corp.,True,3,3,False,0,False
+PCAR,Paccar,PACCAR Inc,True,3,1,False,0,False
+FCX,Freeport-McMoRan,Freeport-McMoRan Inc.,True,3,1,False,3,False
+GBTC,Grayscale Bitcoin Trust,False,True,3,0,False,0,False
+LNG,Cheniere Energy,"Cheniere Energy, Inc",True,3,4,False,0,False
+SNOW,Snowflake,"Snowflake, Inc.",True,3,0,False,0,False
+ROP,Roper Technologies,"Roper Technologies, Inc.",True,3,3,True,0,False
+NSC,Norfolk Southern,Norfolk Southern Corporation,True,3,2,False,0,False
+CPRT,Copart,"Copart, Inc.",True,3,0,True,0,False

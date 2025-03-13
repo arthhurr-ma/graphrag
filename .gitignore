@@ -47,6 +47,7 @@ graphrag_moodys_v1.2.0/
 graphrag_moodys_v2.0.0/
 graphrag_moodys_v2.0.0-fast/
 graphrag_moodys_v2.0.0_test2/
+graphrag_moodys_v2_gpt4o_mini/
 
 # mkdocs
 site/
