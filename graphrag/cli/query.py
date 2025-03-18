@@ -88,7 +88,9 @@ def run_global_search(
                 query=query,
             )
         )
-        logger.success(f"Global Search Response:\n{response}")
+        references = in_text_references(response, str(root))
+        logger.success(f"Global Search Response:\n{response}\n----\nReferences:\n{references}")
+        token_counter.print_stats(method="query")
         # NOTE: we return the response and context data here purely as a complete demonstration of the API.
         # External users should use the API directly to get the response and context data.
         return response, context_data
@@ -142,15 +144,12 @@ def run_global_search(
             query=query,
         )
     )
-    logger.success(f"Global Search Response:\n{response}")
+    references = in_text_references(response, str(root))
+    logger.success(f"Global Search Response:\n{response}\n----\nReferences:\n{references}")
+    token_counter.print_stats(method="query")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
 
-    references = in_text_references(response, str(root))
-    if references:
-        logger.success(f"In-text references found successfully.\n{references}")
-    else:
-        logger.error("No in-text references found.")
 
     return response, context_data
 
@@ -224,7 +223,9 @@ def run_local_search(
                 query=query,
             )
         )
-        logger.success(f"Local Search Response:\n{response}")
+        references = in_text_references(response, str(root))
+        logger.success(f"Local Search Response:\n{response}\n----\nReferences:\n{references}")
+        token_counter.print_stats(method="query")
         # NOTE: we return the response and context data here purely as a complete demonstration of the API.
         # External users should use the API directly to get the response and context data.
         return response, context_data
@@ -285,16 +286,12 @@ def run_local_search(
             query=query,
         )
     )
-    logger.success(f"Local Search Response:\n{response}")
+    references = in_text_references(response, str(root))
+    logger.success(f"Local Search Response:\n{response}\n----\nReferences:\n{references}")
+    token_counter.print_stats(method="query")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
 
-
-    df = in_text_references(response, str(root))
-    if not df.empty:
-        logger.success("In-text references found successfully.")
-    else:
-        logger.error("No in-text references found.") 
    
     return response, context_data
 
@@ -359,7 +356,9 @@ def run_drift_search(
                 query=query,
             )
         )
-        logger.success(f"DRIFT Search Response:\n{response}")
+        references = in_text_references(response, str(root))
+        logger.success(f"Local Search Response:\n{response}\n----\nReferences:\n{references}")
+        token_counter.print_stats(method="query")
         # NOTE: we return the response and context data here purely as a complete demonstration of the API.
         # External users should use the API directly to get the response and context data.
         return response, context_data
@@ -418,16 +417,14 @@ def run_drift_search(
             query=query,
         )
     )
-    logger.success(f"DRIFT Search Response:\n{response}")
+    references = in_text_references(response, str(root))
+    logger.success(f"Local Search Response:\n{response}\n----\nReferences:\n{references}")
+    token_counter.print_stats(method="query")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
 
 
-    df = in_text_references(response, str(root))
-    if not df.empty:
-        logger.success("In-text references found successfully.")
-    else:
-        logger.error("No in-text references found.")
+   
 
     return response, context_data
 
@@ -517,16 +514,12 @@ def run_basic_search(
             query=query,
         )
     )
-    logger.success(f"Basic Search Response:\n{response}")
+
+    references = in_text_references(response, str(root))
+    logger.success(f"Basic Search Response:\n{response}\n----\nReferences:\n{references}")
     # NOTE: we return the response and context data here purely as a complete demonstration of the API.
     # External users should use the API directly to get the response and context data.
 
-    df = in_text_references(response, str(root))
-    if not df.empty:
-        logger.success("In-text references found successfully.")
-    else:
-        logger.error("No in-text references found.")
-    
 
     return response, context_data
 

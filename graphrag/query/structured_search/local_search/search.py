@@ -11,6 +11,7 @@ from typing import Any
 import tiktoken
 
 from graphrag.callbacks.query_callbacks import QueryCallbacks
+from graphrag.callbacks.token_counter import Token_Counter 
 from graphrag.language_model.protocol.base import ChatModel
 from graphrag.prompts.query.local_search_system_prompt import (
     LOCAL_SEARCH_SYSTEM_PROMPT,
@@ -29,6 +30,7 @@ DEFAULT_LLM_PARAMS = {
 
 log = logging.getLogger(__name__)
 
+token_counter = Token_Counter()
 
 class LocalSearch(BaseSearch[LocalContextBuilder]):
     """Search orchestration for local search mode."""
@@ -65,6 +67,9 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
         start_time = time.time()
         search_prompt = ""
         llm_calls, prompt_tokens, output_tokens = {}, {}, {}
+
+        total_input_tokens, total_output_tokens = 0, 0
+
         context_result = self.context_builder.build_context(
             query=query,
             conversation_history=conversation_history,
@@ -75,7 +80,14 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
         prompt_tokens["build_context"] = context_result.prompt_tokens
         output_tokens["build_context"] = context_result.output_tokens
 
-        log.info("GENERATE ANSWER: %s. QUERY: %s", start_time, query)
+        total_input_tokens += context_result.prompt_tokens
+        total_output_tokens += context_result.output_tokens
+
+
+        log.info("Context input data: %s", total_input_tokens)
+        log.info("Context output data: %s", total_output_tokens)
+
+        
         try:
             if "drift_query" in kwargs:
                 drift_query = kwargs["drift_query"]
@@ -95,6 +107,10 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
 
             full_response = ""
 
+            input_text = query + search_prompt  
+            input_tokens = num_tokens(input_text, self.token_encoder)
+            total_input_tokens += input_tokens
+
             async for response in self.model.achat_stream(
                 prompt=query,
                 history=history_messages,
@@ -103,6 +119,9 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
                 full_response += response
                 for callback in self.callbacks:
                     callback.on_llm_new_token(response)
+
+                output_tokens_increment = num_tokens(response, self.token_encoder)
+                total_output_tokens += output_tokens_increment
 
             llm_calls["response"] = 1
             prompt_tokens["response"] = num_tokens(search_prompt, self.token_encoder)
@@ -136,6 +155,9 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
                 output_tokens=0,
             )
 
+            log.info("Context data: %s", total_input_tokens)
+            log.info("Context data: %s", total_output_tokens)
+
     async def stream_search(
         self,
         query: str,
@@ -144,18 +166,28 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
         """Build local search context that fits a single context window and generate answer for the user query."""
         start_time = time.time()
 
+        total_input_tokens, total_output_tokens, total_tokens = 0, 0, 0
+
         context_result = self.context_builder.build_context(
             query=query,
             conversation_history=conversation_history,
             **self.context_builder_params,
         )
-        log.info("GENERATE ANSWER: %s. QUERY: %s", start_time, query)
+
+        total_input_tokens += context_result.prompt_tokens
+        total_output_tokens += context_result.output_tokens
+
         search_prompt = self.system_prompt.format(
             context_data=context_result.context_chunks, response_type=self.response_type
         )
         history_messages = [
             {"role": "system", "content": search_prompt},
         ]
+
+
+        input_text = query + search_prompt 
+        input_tokens = num_tokens(input_text, self.token_encoder)
+        total_input_tokens += input_tokens
 
         for callback in self.callbacks:
             callback.on_context(context_result.context_records)
@@ -165,6 +197,18 @@ class LocalSearch(BaseSearch[LocalContextBuilder]):
             history=history_messages,
             model_parameters=self.model_params,
         ):
+
+            output_tokens_increment = num_tokens(response, self.token_encoder)
+            total_output_tokens += output_tokens_increment
+
             for callback in self.callbacks:
                 callback.on_llm_new_token(response)
             yield response
+
+
+        log.info("Context input data: %s", total_input_tokens)
+        log.info("Context output data: %s", total_output_tokens)
+        log.info(f"Total tokens: {total_input_tokens + total_output_tokens}")
+        total_tokens = total_input_tokens + total_output_tokens
+        token_counter._update_token_count("local_search", total_input_tokens, total_output_tokens, total_tokens)
+

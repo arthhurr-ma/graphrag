@@ -211,9 +211,9 @@ def _run_index(
         )
     else:
         success("All workflows completed successfully.", True)
-        token_counter.print_stats()
+        token_counter.print_stats(method="index")
         try:
-            export_token_stats_to_csv(token_counter, config.root_dir)
+            export_token_stats_to_csv(token_counter, config.root_dir, method="index")
         except Exception as e:
             log.error(f"Error during export_token_stats_to_csv process: {e}")
         raise 

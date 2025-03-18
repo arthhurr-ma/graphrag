@@ -519,7 +519,6 @@ def _query_cli(
                 )
             case _:
                 raise ValueError(INVALID_METHOD_ERROR)
-        actual_logger.info("Query execution completed successfully.")
 
     except Exception as e:
         actual_logger.error(f"An error occurred during query execution: {e}")

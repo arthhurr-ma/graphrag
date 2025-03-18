@@ -12,12 +12,8 @@ log = logging.getLogger(__name__)
 # check for update file 
 def load_parquet_data(base_dir: str, file_path: str) -> pd.DataFrame:
 
-    update_output_dir = os.path.join(base_dir, "update_output")
-
-    if os.path.isdir(update_output_dir):
-        full_path = os.path.join(update_output_dir, file_path)
-    else:
-        full_path = os.path.join(base_dir, "output", file_path)
+    
+    full_path = os.path.join(base_dir, "output", file_path)
 
     try:
         return pd.read_parquet(full_path)
@@ -37,14 +33,14 @@ def find_parquet_file(root_dir, file_name):
     return file_path
 
 
-def export_token_stats_to_csv(token_counter, root_dir):
+def export_token_stats_to_csv(token_counter, root_dir, method):
 
     try:
-        token_directory = os.path.join(root_dir, "logs", "token_counts_index")
+        token_directory = os.path.join(root_dir, "logs", f"token_counts_{method}")
         Path(token_directory).mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        csv_file_path = os.path.join(token_directory, f"token_stats_scaling_experiment.csv")
+        csv_file_path = os.path.join(token_directory, f"token_stats_{timestamp}.csv")
 
         headers = [
         "Batch", 
@@ -78,7 +74,7 @@ def export_token_stats_to_csv(token_counter, root_dir):
                 communities = communities_df.groupby("level").size().to_dict() if 'level' in communities_df.columns else {}
 
 
-                stats = token_counter.get_token_counts()
+                stats = token_counter.get_token_counts(method)
                 chat_input_tokens = sum(stat.get("input_tokens", 0) for stat in stats.values())
                 chat_output_tokens = sum(stat.get("output_tokens", 0) for stat in stats.values())
                 chat_total_tokens = sum(stat.get("total_tokens", 0) for stat in stats.values())

@@ -24,8 +24,8 @@ def text_unit_lookup(text_unit_ids: List[int], root_path: str) -> Set[str]:
 
         if not document_titles:
             logger.info(f"No document titles found for text_unit_ids: {text_unit_ids}")
-        
-        logger.info(f"Found document titles for text_unit_ids {text_unit_ids}: {document_titles}")
+        else:
+            logger.info(f"Found document titles for text_unit_ids {text_unit_ids}: {document_titles}")
         return document_titles
     except Exception as e:
         logger.exception(f"An error occurred in text_unit_lookup: {e}")  
@@ -110,22 +110,18 @@ def community_report_lookup(community_report_indexes: List[int], root_path: str)
 
 
 def find_document_path(doc_title: str, root_path: str) -> Optional[str]:
-    """Searches for the document in the subfolders of 'input' and returns the path if found."""
-    subfolders = [ "10K", "10Q", "Earnings Call", "Ratings Report"]
-    
-    for folder in subfolders:
-        folder_path = os.path.join(root_path, "input", folder)
-        doc_path = os.path.join(folder_path, f"{doc_title}.md")
-        if os.path.isfile(doc_path):
-            return f"file:///{doc_path}"
-    
+    """Searches for the document in all subfolders and returns the path if found."""
+    for dirpath, _, filenames in os.walk(os.path.join(root_path, "input")):
+        for filename in filenames:
+            if doc_title in filename:
+                doc_path = os.path.join(dirpath, filename)
+                return f"{doc_path}"
     logger.warning(f"Document {doc_title} not found in any subfolder.")
     return None
 
 
 
-
-def in_text_references(query: str, root_path: str) -> Optional[pd.DataFrame]:
+def in_text_references(query: str, root_path: str) -> Optional[str]:
     """Extracts references from the query and returns a DataFrame."""
     logger.info(f"Extracting in-text references from query: {query}")
     references: List[Tuple[str, Optional[str], str, List[int]]] = []
@@ -135,44 +131,34 @@ def in_text_references(query: str, root_path: str) -> Optional[pd.DataFrame]:
     matches = re.findall(reference_pattern, query)
 
     logger.info(f"Found {len(matches)} references in the query: {matches}")
-
-    results_str = ""
-    unique_matches = set()
-
-    for ref_type, index_str in matches:
-        indices = index_str.split(',')
-        for index in indices:
-            unique_matches.add((ref_type, index.strip()))
-    matches = list(unique_matches)
-
-
+   
+    unique_matches = {'Reports': set(), 'Entities': set(), 'Relationships': set()}
     for match in matches:
-        ref_type, index_str = match
-        index = int(index_str)
+        for key in unique_matches.keys():
+            numbers = re.findall(f'{key} \(([\d, ]+)\)', match)
+            if numbers:
+                unique_matches[key].update([int(num) for num in numbers[0].split(',')])
 
-        logger.debug(f"Processing reference type: {ref_type}, index: {index}")
+    logger.info(f"Unique references: {unique_matches}")
 
-        if ref_type == "Entities":
-            references.extend(entity_lookup([index], root_path))  
-        elif ref_type == "Relationships":
-            references.extend(relationship_lookup([index], root_path))  
-        elif ref_type == "Reports":
-            references.extend(community_report_lookup([index], root_path))  
-        else:
-            logger.warning(f"Unrecognized reference type: {ref_type}. Skipping.")
-
-
-    # Create DataFrame
-    if not matches:
-        logger.info("No references found in the query.")
-        return None
+    if unique_matches['Entities']:
+        entities = entity_lookup(unique_matches['Entities'], root_path)
+        references.extend(entities)
+    if unique_matches['Relationships']:
+        relationships = relationship_lookup(unique_matches['Relationships'], root_path)
+        references.extend(relationships)
+    if unique_matches['Reports']:
+        community_reports = community_report_lookup(unique_matches['Reports'], root_path)
+        references.extend(community_reports)
+   
+    unique_document_references: Set[str] = set()
     
     df = pd.DataFrame(columns=["type of reference", "index", "title", "description", "document_title"])
     all_text_unit_ids: List[int] = []
 
     for ref_type, title, description, text_unit_ids, index in references:
         all_text_unit_ids = text_unit_ids  
-        logger.debug(f"Looking up document titles for text_unit_ids: {all_text_unit_ids}")
+        logger.info(f"Looking up document titles for text_unit_ids: {all_text_unit_ids}")
         document_titles = text_unit_lookup(all_text_unit_ids, root_path)  
         logger.info(f"Found document titles: {document_titles} for reference {title}")
  
@@ -181,8 +167,8 @@ def in_text_references(query: str, root_path: str) -> Optional[pd.DataFrame]:
 
             doc_link = find_document_path(doc_title, root_path)
             if doc_link:
-                results_str += f"Reference: {doc_title}, Document: {doc_link}\n"
-
+                reference_string = f"Reference: {doc_title}, Document: {doc_link}" 
+                unique_document_references.add(reference_string)
 
             new_row = pd.DataFrame([{
                 "type of reference": ref_type,
@@ -195,13 +181,20 @@ def in_text_references(query: str, root_path: str) -> Optional[pd.DataFrame]:
             df = pd.concat([df, new_row], ignore_index=True)
 
     df.drop_duplicates(inplace=True)
-    output_path = os.path.join(root_path, "output/references/in_text_citations.csv")
+    output_dir = os.path.join(root_path, "output/references")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "in_text_citations.csv")
     if not df.empty:
         df.to_csv(output_path, index=False)
         logger.info(f"References successfully written to {output_path}")
     else:
         logger.info("No references found, no CSV written.")
 
-    
+    results_str = "\n".join(sorted(unique_document_references))
 
-    return results_str
+    if results_str:
+        logger.info(f"Returning non-empty results string, {results_str}")
+        return results_str
+    else:
+        logger.info("Results string is empty, returning None.")
+        return None
